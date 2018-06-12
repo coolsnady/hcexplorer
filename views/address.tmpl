@@ -1,0 +1,298 @@
+{{define "address"}}
+<!DOCTYPE html>
+<html lang="en">
+
+{{template "html-head" printf "Decred Address %s" .Data.Address}}
+<body>
+    {{template "navbar" . }}
+    {{with .Data}}
+    {{$heights := $.ConfirmHeight}}
+    {{$TxnCount := .TxnCount}}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 col-sm-6">
+                <h4>Address</h4>
+                <div class="mono">
+                    {{.Address}}<a
+                        id="qrcode-init"
+                        href="javascript:showAddressQRCode('{{.Address}}');"
+                        class="dcricon-qrcode jsonly no-underline color-inherit p10"
+                    ></a>
+                </div>
+                <div class="row">
+                    <a href="javascript:hideAddressQRCode();" id="address-qrcode" class="col opacity-transition d-block" style="opacity: 0"></a>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6 d-flex pb-3">
+                <table>
+                    <tr  class="h2rem">
+                        <td class="pr-2 lh1rem vam text-right xs-w91">TOTAL UNSPENT</td>
+                        {{if .Fullmode}}
+                            <td class="fs28 mono nowrap fs16-decimal d-flex align-items-center justify-content-end">
+                                {{if .Balance}}
+                                    {{template "decimalParts" (amountAsDecimalParts .Balance.TotalUnspent true)}}<span class="pl-1 unit">DCR</span>
+                                {{else}}
+                                <span class="pl-1 unit">0.000000000 DCR</span>
+                                {{end}}
+                            </td>
+                        {{else}}
+                            {{if ge .KnownTransactions .MaxTxLimit}}
+                            <td class="fs28 mono nowrap d-flex align-items-center justify-content-end">unavailable</td>
+                            {{else}}
+                            <td class="fs28 mono nowrap fs16-decimal d-flex align-items-center justify-content-end">{{.AmountUnspent.ToCoin}}</td>
+                            {{end}}
+                        {{end}}
+                    </tr>
+                    <tr>
+                        <td class="text-right pr-2">RECEIVED</td>
+                        {{if .Fullmode}}
+                            <td class="mono nowrap text-right">
+                                {{if .Balance}}
+                                    {{$received := add .Balance.TotalSpent .Balance.TotalUnspent}}
+                                    {{template "decimalParts" (amountAsDecimalParts $received true)}}<span class="pl-1 unit">DCR</span>
+                                {{else}}
+                                <span class="pl-1 unit">0.000000000 DCR</span>
+                                {{end}}
+                            </td>
+                        {{else}}
+                            {{if ge .KnownTransactions .MaxTxLimit}}
+                            <td class="mono nowrap text-right">unavailable</td>
+                            {{else}}
+                            <td class="mono nowrap text-right">{{.AmountReceived.ToCoin}}</td>
+                            {{end}}
+                        {{end}}
+                    </tr>
+                    <tr>
+                        <td class="text-right pr-2">SPENT</td>
+                        {{if .Fullmode}}
+                            <td class="mono nowrap text-right">
+                                {{if .Balance}}
+                                    {{template "decimalParts" (amountAsDecimalParts .Balance.TotalSpent true)}}<span class="pl-1 unit">DCR</span>
+                                {{else}}
+                                <span class="pl-1 unit">0.000000000 DCR</span>
+                                {{end}}
+                            </td>
+                        {{else}}
+                            {{if ge .KnownTransactions .MaxTxLimit}}
+                            <td class="mono nowrap text-right">unavailable</td>
+                            {{else}}
+                            <td class="mono nowrap text-right">{{.AmountSent.ToCoin}}</td>
+                            {{end}}
+                        {{end}}
+                    </tr>
+                    {{if ne .NumUnconfirmed 0}}
+                        <tr>
+                            <td class="text-right pr-2">UNCONFIRMED</td>
+                            <td class="mono nowrap text-right">
+                                {{.NumUnconfirmed}} transaction{{if gt .NumUnconfirmed 0}}s{{end}}
+                            </td>
+                        </tr>
+                    {{end}}
+                </table>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <div class="d-flex flex-wrap align-items-center justify-content-end mb-1">
+                    <h5 class="mr-auto mb-0">History</h5>
+                    {{if lt .NumTransactions $TxnCount}}
+                    <div div class="d-flex flex-wrap-reverse align-items-center justify-content-end">
+                        <span class="fs12 nowrap text-right">
+                            {{intComma (add .Offset 1)}} &mdash; {{intComma (add .Offset .NumTransactions)}} of {{intComma $TxnCount}} transactions
+                            {{if and (not .Fullmode) (ge .KnownTransactions .MaxTxLimit)}}
+                            <sup>*</sup>
+                            {{end}}
+                        </span>
+                        <nav aria-label="address transactions navigation" data-limit="{{.Limit}}" class="ml-2">
+                            <ul class="pagination mb-0 pagination-sm">
+                                <li class="page-item {{if eq .Offset 0}}disabled{{end}}">
+                                    <a
+                                        class="page-link"
+                                        href="{{.Path}}?n={{.Limit}}&start={{if gt (subtract .Offset .Limit) 0}}{{subtract .Offset .Limit}}{{else}}0{{end}}&txntype={{.TxnType}}"
+                                        id="prev"
+                                    >Previous</a>
+                                </li>
+                                <li class="page-item {{if lt (subtract .KnownTransactions .Offset) (add .Limit 1)}}disabled{{end}}">
+                                    <a
+                                        class="page-link"
+                                        href="{{.Path}}?n={{.Limit}}&start={{add .Offset .Limit}}&txntype={{.TxnType}}"
+                                        id="next">
+                                        Next
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                    {{else}}
+                    <span class="fs12 nowrap text-right">{{intComma $TxnCount}} transaction{{if gt $TxnCount 1}}s{{end}}</span>
+                    {{end}}
+                </div>
+                {{if .Transactions}}
+                <table class="table table-mono-cells table-sm striped">
+                    <thead>
+                        <th>Input/Output ID</th>
+                        <th class="text-right">Credit DCR</th>
+                        <th>Debit DCR</th>
+                        <th>Time</th>
+                        <th>Age</th>
+                        <th>Confirms</th>
+                        <th>Size</th>
+                    </thead>
+                    <tbody>
+                        {{range $i, $v := .Transactions}}
+                        <tr>
+                            {{with $v}}
+                            <td><a href="/tx/{{.TxID}}" class="hash" data-keynav-priority>{{.IOID}}</a></td>
+                            {{if ne .ReceivedTotal 0.0}}
+                                <td class="text-right">{{template "decimalParts" (float64AsDecimalParts .ReceivedTotal false)}}</td>
+                            {{else}}
+                                {{if eq .SentTotal 0.0}}
+                                <td class="text-right">sstxcommitment</td>
+                                {{else}}
+                                <td></td>
+                                {{end}}
+                            {{end}}
+                            {{if ne .SentTotal 0.0}}
+                                {{if lt 0.0 .SentTotal}}
+                                    <td>{{template "decimalParts" (float64AsDecimalParts .SentTotal false)}}</td>
+                                {{else}}
+                                    <td>N/A</td>
+                                {{end}}
+                            {{else}}
+                                <td></td>
+                            {{end}}
+                            <td>
+                                {{if eq .Time 0}}
+                                    Unconfirmed
+                                {{else}}
+                                    {{.FormattedTime}}
+                                {{end}}
+                            </td>
+                            <td>
+                            {{if eq .Time 0}}
+                                N/A
+                            {{else}}
+                                <span data-age="{{.Time}}"></span>
+                            {{end}}
+                            </td>
+                            <td data-confirmation-block-height="{{index $.ConfirmHeight $i}}">{{.Confirmations}}</td>
+                            <td>{{.FormattedSize}}</td>
+                            {{end}}
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                {{else}}
+                <table class="table table-mono-cells table-sm striped">
+                    <tr>
+                        <td>
+                            No transactions found for this address.
+                        </td>
+                    </tr>
+                </table>
+                {{end}}
+
+                <div
+                    id="txntype-wrapper"
+                    class="d-flex align-items-center justify-content-end"
+                >
+                    <label class="mb-0 mr-1" for="txntype">Type</label>
+                    <select
+                        name="txntype"
+                        id="txntype"
+                        class="form-control-sm mb-2 mr-sm-2 mb-sm-0 {{if not .Fullmode}}disabled{{end}}"
+                        {{if not .Fullmode}}disabled="disabled"{{end}}
+                    >
+                        <option {{if eq .TxnType "all"}}selected{{end}} value="all">All</option>
+                        <option {{if eq .TxnType "credit"}}selected{{end}} value="credit">Credits</option>
+                        <option {{if eq .TxnType "debit"}}selected{{end}} value="debit">Debits</option>
+                    </select>
+                </div>
+                {{if and (not .Fullmode) (ge .KnownTransactions .MaxTxLimit)}}
+                <div>
+                    *Limit of {{.MaxTxLimit}} transactions shown in lite mode.
+                </div>
+                {{end}}
+                <div
+                    id="pagesize-wrapper"
+                    class="hidden d-flex align-items-center justify-content-end"
+                >
+                    <label class="mb-0 mr-1" for="pagesize">Page size</label>
+                    <select
+                        name="pagesize"
+                        id="pagesize"
+                        class="form-control-sm mb-2 mr-sm-2 mb-sm-0 {{if lt $TxnCount 20}}disabled{{end}}"
+                        {{if lt $TxnCount 20}}disabled="disabled"{{end}}
+                    >
+                        <option {{if eq .Limit 10}}selected{{end}} value="20">20</option>
+                        {{if ge $TxnCount 100}}
+                        <option {{if eq .Limit 100}}selected{{end}} value="100">100</option>
+                        {{else}}
+                        <option {{if eq .Limit $TxnCount}}selected{{end}} value="{{$TxnCount}}">All ({{$TxnCount}})</option>
+                        {{end}}
+                        {{if gt $TxnCount 100}}
+                        {{if ge $TxnCount 1000}}
+                        <option {{if eq .Limit 1000}}selected{{end}} value="1000">1000</option>
+                        {{else}}
+                        <option {{if eq .Limit $TxnCount}}selected{{end}} value="{{$TxnCount}}">All ({{$TxnCount}})</option>
+                        {{end}}
+                        {{end}}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        {{if lt .NumFundingTxns .KnownFundingTxns}}
+        $("#pagesize-wrapper").removeClass("hidden")
+        $("#pagesize").change(function(ev) {
+            Turbolinks.visit(
+                window.location.pathname
+                + "?txntype="+ $("#txntype").val()
+                + "&n="+ parseInt($(ev.currentTarget).val())
+                + "&start=" + {{.Offset}}
+            )
+        })
+        {{end}}
+
+        $("#txntype").change(function(ev) {
+            Turbolinks.visit(
+                window.location.pathname
+                + "?txntype="+ $(ev.currentTarget).val()
+                + "&n="+ parseInt($("#pagesize").val())
+                + "&start=" + {{.Offset}}
+            )
+        })
+
+        function showAddressQRCode() {
+            var $qrcode = $("#address-qrcode")
+            $.getScript(
+                "/js/qrcode.min.js",
+                function() {
+                    new QRCode($qrcode[0], {{.Address}});
+                    $qrcode.css({
+                        margin: "14px 0px 12px",
+                        opacity: 1
+                    })
+                    $("#qrcode-init").hide()
+                }
+            )
+        }
+
+        function hideAddressQRCode() {
+            $("#qrcode-init").show()
+            $("#address-qrcode").css({
+                margin: "0",
+                opacity: 0
+            })
+            .html("")
+        }
+    </script>
+    {{end}}
+    {{ template "footer" . }}
+
+</body>
+</html>
+{{end}}
