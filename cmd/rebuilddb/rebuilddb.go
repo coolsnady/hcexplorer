@@ -40,7 +40,7 @@ func mainCore() int {
 	// Parse the configuration file, and setup logger.
 	cfg, err := loadConfig()
 	if err != nil {
-		fmt.Printf("Failed to load dcrdata config: %s\n", err.Error())
+		fmt.Printf("Failed to load hxdata config: %s\n", err.Error())
 		return 1
 	}
 

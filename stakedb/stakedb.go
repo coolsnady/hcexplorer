@@ -1,5 +1,5 @@
 // Copyright (c) 2018, The Decred developers
-// Copyright (c) 2018, The dcrdata developers
+// Copyright (c) 2018, The hxdata developers
 // Copyright (c) 2017, Jonathan Chappelow
 // See LICENSE for details.
 
@@ -549,7 +549,7 @@ func (db *StakeDatabase) Open(dbName string) error {
 	if err != nil {
 		if strings.Contains(err.Error(), "resource temporarily unavailable") ||
 			strings.Contains(err.Error(), "is being used by another process") {
-			return fmt.Errorf("Stake DB already opened. dcrdata running?")
+			return fmt.Errorf("Stake DB already opened. hxdata running?")
 		}
 		if strings.Contains(err.Error(), "does not exist") {
 			log.Info("Creating new stake DB.")

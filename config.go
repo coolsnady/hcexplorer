@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	defaultConfigFilename = "dcrdata.conf"
-	defaultLogFilename    = "dcrdata.log"
+	defaultConfigFilename = "hxdata.conf"
+	defaultLogFilename    = "hxdata.log"
 	defaultDataDirname    = "data"
 	defaultLogLevel       = "info"
 	defaultLogDirname     = "logs"
@@ -35,7 +35,7 @@ var activeNet = &netparams.MainNetParams
 var activeChain = &chaincfg.MainNetParams
 
 var (
-	defaultHomeDir           = dcrutil.AppDataDir("dcrdata", false)
+	defaultHomeDir           = dcrutil.AppDataDir("hxdata", false)
 	defaultConfigFile        = filepath.Join(defaultHomeDir, defaultConfigFilename)
 	defaultLogDir            = filepath.Join(defaultHomeDir, defaultLogDirname)
 	defaultDataDir           = filepath.Join(defaultHomeDir, defaultDataDirname)
@@ -54,12 +54,12 @@ var (
 	defaultMempoolMaxInterval = 120
 	defaultMPTriggerTickets   = 1
 
-	defaultDBFileName = "dcrdata.sqlt.db"
+	defaultDBFileName = "hxdata.sqlt.db"
 
 	defaultPGHost   = "127.0.0.1:5432"
-	defaultPGUser   = "dcrdata"
+	defaultPGUser   = "hxdata"
 	defaultPGPass   = ""
-	defaultPGDBName = "dcrdata"
+	defaultPGDBName = "hxdata"
 )
 
 type config struct {
@@ -92,7 +92,7 @@ type config struct {
 	MempoolMaxInterval int    `long:"mp-max-interval" description:"The maximum time in seconds between mempool reports (within a couple seconds), regarless of number of new tickets seen."`
 	MPTriggerTickets   int    `long:"mp-ticket-trigger" description:"The number minimum number of new tickets that must be seen to trigger a new mempool report."`
 	DumpAllMPTix       bool   `long:"dumpallmptix" description:"Dump to file the fees of all the tickets in mempool."`
-	DBFileName         string `long:"dbfile" description:"SQLite DB file name (default is dcrdata.sqlt.db)."`
+	DBFileName         string `long:"dbfile" description:"SQLite DB file name (default is hxdata.sqlt.db)."`
 
 	FullMode bool   `long:"pg" description:"Run in \"Full Mode\" mode,  enables postgresql support"`
 	PGDBName string `long:"pgdbname" description:"PostgreSQL DB name."`

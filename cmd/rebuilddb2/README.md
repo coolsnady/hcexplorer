@@ -1,6 +1,6 @@
 # Command line app `rebuilddb2`
 
-The `rebuilddb2` app is used for maintenance of dcrdata's `dcrpg` database that
+The `rebuilddb2` app is used for maintenance of hxdata's `dcrpg` database that
 uses PostgreSQL to store a nearly complete record of the Decred blockchain data.
 
 **IMPORTANT**: When performing a bulk data import (e.g. full chain scan from
@@ -9,13 +9,13 @@ genesis block), be sure to configure PostgreSQL appropriately.  Please see
 
 ## Installation
 
-Be able to build dcrdata (see [../../README.md](../../README.md#build-from-source)). In short:
+Be able to build hxdata (see [../../README.md](../../README.md#build-from-source)). In short:
 
 * Install `dep`, the dependency management tool
 
       go get -u -v github.com/golang/dep/cmd/dep
 
-* Clone the dcrdata repository
+* Clone the hxdata repository
 
       git clone https://github.com/coolsnady/Explorer $GOPATH/src/github.com/coolsnady/Explorer
 
@@ -29,7 +29,7 @@ Be able to build dcrdata (see [../../README.md](../../README.md#build-from-sourc
       # build rebuilddb2 executable in workspace:
       cd $GOPATH/src/github.com/coolsnady/Explorer/cmd/rebuilddb2
       go build
-      # or to install dcrdata and other tools into $GOPATH/bin:
+      # or to install hxdata and other tools into $GOPATH/bin:
       go install ./cmd/rebuilddb2
 
 ## Usage
@@ -46,12 +46,12 @@ A fresh rebuild of the database is accomplished via:
 ```
 
 Remember to update your PostgreSQL config (postgresql.conf) before *and after*
-bulk data imports. Namely, before normal dcrdata operation, ensure that
+bulk data imports. Namely, before normal hxdata operation, ensure that
 `fsync=true` and other setting are adjusted for efficient queries.
 
 ## Details
 
-Rebuilding the dcrdata tables from scratch involves the following steps:
+Rebuilding the hxdata tables from scratch involves the following steps:
 
 * Connect to the PostgreSQL database using the settings in rebuilddb2.conf
 * Create the tables (i.e. "blocks", "transactions", "vins", etc).
@@ -62,4 +62,4 @@ See `rebuilddb2 --help` for more information on how to tweak the operating mode.
 
 ## License
 
-See [LICENSE](../../LICENSE) at the base of the dcrdata repository.
+See [LICENSE](../../LICENSE) at the base of the hxdata repository.

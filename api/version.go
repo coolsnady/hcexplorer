@@ -1,4 +1,4 @@
-// Copyright (c) 2017, The dcrdata developers
+// Copyright (c) 2017, The hxdata developers
 // See LICENSE for details.
 
 package api
@@ -24,7 +24,7 @@ var ver = version{
 // go build -ldflags "-X main.CommitHash=`git rev-parse --short HEAD`"
 var CommitHash string
 
-const appName string = "dcrdata-api"
+const appName string = "hxdata-api"
 
 func (v *version) String() string {
 	var hashStr string

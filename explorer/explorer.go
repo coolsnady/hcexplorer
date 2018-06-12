@@ -1,6 +1,6 @@
 // Package explorer handles the block explorer subsystem for generating the
 // explorer pages.
-// Copyright (c) 2017, The dcrdata developers
+// Copyright (c) 2017, The hxdata developers
 // See LICENSE for details.
 package explorer
 
@@ -345,7 +345,7 @@ func (exp *explorerUI) addRoutes() {
 // Simulate ticket purchase and re-investment over a full year for a given
 // starting amount of DCR and calculation parameters.  Generate a TEXT table of
 // the simulation results that can optionally be used for future expansion of
-// dcrdata functionality.
+// hxdata functionality.
 func (exp *explorerUI) simulateASR(StartingDCRBalance float64, IntegerTicketQty bool,
 	CurrentStakePercent float64, ActualCoinbase float64, CurrentBlockNum float64,
 	ActualTicketPrice float64) (ASR float64, ReturnTable string) {

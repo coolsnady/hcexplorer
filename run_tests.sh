@@ -14,7 +14,7 @@ set -ex
 # static checker.
 
 GOVERSION=${1:-1.10}
-REPO=dcrdata
+REPO=hxdata
 DOCKER_IMAGE_TAG=decred-golang-builder-$GOVERSION
 
 testrepo () {

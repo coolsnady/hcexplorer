@@ -535,7 +535,7 @@ func (db *wiredDB) GetStakeVersionsLatest() (*dcrjson.StakeVersions, error) {
 
 // GetVoteInfo attempts to decode the vote bits of a SSGen transaction. If the
 // transaction is not a valid SSGen, the VoteInfo output will be nil. Depending
-// on the stake version with which dcrdata is compiled with (chaincfg.Params),
+// on the stake version with which hxdata is compiled with (chaincfg.Params),
 // the Choices field of VoteInfo may be a nil slice even if the votebits were
 // set for a previously-valid agenda.
 func (db *wiredDB) GetVoteInfo(txid string) (*apitypes.VoteInfo, error) {

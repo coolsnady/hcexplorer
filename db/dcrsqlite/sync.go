@@ -114,7 +114,7 @@ func (db *wiredDB) resyncDB(quit chan struct{}, blockGetter rpcutils.BlockGetter
 	log.Info("Current best block (sqlite block DB): ", summaryHeight)
 	if stakeInfoHeight != summaryHeight {
 		log.Error("Current best block (sqlite stake DB): ", stakeInfoHeight)
-		return -1, fmt.Errorf("SQLite database (dcrdata.sqlt.db) is corrupted")
+		return -1, fmt.Errorf("SQLite database (hxdata.sqlt.db) is corrupted")
 	}
 	log.Info("Current best block (stakedb):         ", stakeDBHeight)
 

@@ -1,4 +1,4 @@
-# dcrdata
+# hxdata
 
 [![Build Status](https://img.shields.io/travis/coolsnady/Explorer.svg)](https://travis-ci.org/coolsnady/Explorer)
 [![GitHub release](https://img.shields.io/github/release/coolsnady/Explorer.svg)](https://github.com/coolsnady/Explorer/releases)
@@ -6,12 +6,12 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/coolsnady/Explorer)](https://goreportcard.com/report/github.com/coolsnady/Explorer)
 [![ISC License](https://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 
-The dcrdata repository is a collection of golang packages and apps for [Decred](https://www.decred.org/) data collection, storage, and presentation.
+The hxdata repository is a collection of golang packages and apps for [Decred](https://www.decred.org/) data collection, storage, and presentation.
 
 ## Repository overview
 
 ```none
-../dcrdata              The dcrdata daemon.
+../hxdata              The hxdata daemon.
 ├── blockdata           Package blockdata.
 ├── cmd
 │   ├── rebuilddb       rebuilddb utility, for SQLite backend.
@@ -55,15 +55,15 @@ The following instructions assume a Unix-like shell (e.g. bash).
 
       go get -u -v github.com/golang/dep/cmd/dep
 
-* Clone the dcrdata repository. It **must** be cloned into the following directory.
+* Clone the hxdata repository. It **must** be cloned into the following directory.
 
       git clone https://github.com/coolsnady/Explorer $GOPATH/src/github.com/coolsnady/Explorer
 
-* Fetch dependencies, and build the `dcrdata` executable.
+* Fetch dependencies, and build the `hxdata` executable.
 
       cd $GOPATH/src/github.com/coolsnady/Explorer
       dep ensure
-      # build dcrdata executable in workspace:
+      # build hxdata executable in workspace:
       go build
 
 The sqlite driver uses cgo, which requires a C compiler (e.g. gcc) to compile the C sources. On
@@ -79,7 +79,7 @@ vendor folders and run `dep ensure` again.
 The config file, logs, and data files are stored in the application data folder, which may be specified via the `-A/--appdata` setting. However, the location of the config file may be set with `-C/--configfile`.
 
 The "public" and "views" folders *must* be in the same
-folder as the `dcrdata` executable.
+folder as the `hxdata` executable.
 
 ## Updating
 
@@ -97,9 +97,9 @@ necessary.
 
 ### Configure PostgreSQL (IMPORTANT)
 
-If you intend to run dcrdata in "full" mode (i.e. with the `--pg` switch), which
+If you intend to run hxdata in "full" mode (i.e. with the `--pg` switch), which
 uses a PostgreSQL database backend, it is crucial that you configure your
-PostgreSQL server for your hardware and the dcrdata workload.
+PostgreSQL server for your hardware and the hxdata workload.
 
 Read [postgresql-tuning.conf](./db/dcrpg/postgresql-tuning.conf) carefully for
 details on how to make the necessary changes to your system.
@@ -109,31 +109,31 @@ details on how to make the necessary changes to your system.
 Begin with the sample configuration file:
 
 ```bash
-cp sample-dcrdata.conf dcrdata.conf
+cp sample-hxdata.conf hxdata.conf
 ```
 
-Then edit dcrdata.conf with your dcrd RPC settings. After you are finished, move
-dcrdata.conf to the `appdata` folder (default is `~/.dcrdata` on Linux,
-`%localappdata%\Dcrdata` on Windows). See the output of `dcrdata --help` for a list
+Then edit hxdata.conf with your dcrd RPC settings. After you are finished, move
+hxdata.conf to the `appdata` folder (default is `~/.hxdata` on Linux,
+`%localappdata%\Dcrdata` on Windows). See the output of `hxdata --help` for a list
 of all options and their default values.
 
 ### Indexing the Blockchain
 
-If dcrdata has not previously been run with the PostgreSQL database backend, it
+If hxdata has not previously been run with the PostgreSQL database backend, it
 is necessary to perform a bulk import of blockchain data and generate table
-indexes. *This will be done automatically by `dcrdata`* on a fresh startup.
+indexes. *This will be done automatically by `hxdata`* on a fresh startup.
 
 Alternatively, the PostgreSQL tables may also be generated with the `rebuilddb2`
 command line tool:
 
-* Create the dcrdata user and database in PostgreSQL (tables will be created automatically).
+* Create the hxdata user and database in PostgreSQL (tables will be created automatically).
 * Set your PostgreSQL credentials and host in both `./cmd/rebuilddb2/rebuilddb2.conf`,
-  and `dcrdata.conf` in the location specified by the `appdata` flag.
+  and `hxdata.conf` in the location specified by the `appdata` flag.
 * Run `./rebuilddb2` to bulk import data and index the tables.
 * In case of irrecoverable errors, such as detected schema changes without an
   upgrade path, the tables and their indexes may be dropped with `rebuilddb2 -D`.
 
-Note that dcrdata requires that [dcrd](https://docs.decred.org/getting-started/user-guides/dcrd-setup/) is running with optional indexes enabled.  By default these indexes are not turned on when dcrd is installed.
+Note that hxdata requires that [dcrd](https://docs.decred.org/getting-started/user-guides/dcrd-setup/) is running with optional indexes enabled.  By default these indexes are not turned on when dcrd is installed.
 
 In dcrd.conf set:
 ```
@@ -141,24 +141,24 @@ txindex=1
 addrindex=1
 ```
 
-### Starting dcrdata
+### Starting hxdata
 
-Launch the dcrdata daemon and allow the databases to process new blocks. Both
+Launch the hxdata daemon and allow the databases to process new blocks. Both
 SQLite and PostgreSQL synchronization require about an hour the first time
-dcrdata is run, but they are done concurrently. On subsequent launches, only
-blocks new to dcrdata are processed.
+hxdata is run, but they are done concurrently. On subsequent launches, only
+blocks new to hxdata are processed.
 
 ```bash
-./dcrdata    # don't forget to configure dcrdata.conf in the appdata folder!
+./hxdata    # don't forget to configure hxdata.conf in the appdata folder!
 ```
 
-Unlike dcrdata.conf, which must be placed in the `appdata` folder or explicitly
+Unlike hxdata.conf, which must be placed in the `appdata` folder or explicitly
 set with `-C`, the "public" and "views" folders *must* be in the same folder as
-the `dcrdata` executable.
+the `hxdata` executable.
 
-## dcrdata daemon
+## hxdata daemon
 
-The root of the repository is the `main` package for the dcrdata app, which has
+The root of the repository is the `main` package for the hxdata app, which has
 several components including:
 
 1. Block explorer (web interface).
@@ -169,22 +169,22 @@ several components including:
 
 ### Block Explorer
 
-After dcrdata syncs with the blockchain server via RPC, by default it will begin
+After hxdata syncs with the blockchain server via RPC, by default it will begin
 listening for HTTP connections on `http://127.0.0.1:7777/`. This means it starts
 a web server listening on IPv4 localhost, port 7777. Both the interface and port
 are configurable. The block explorer and the JSON API are both provided by the
 server on this port. See [JSON REST API](#json-rest-api) for details.
 
-Note that while dcrdata can be started with HTTPS support, it is recommended to
+Note that while hxdata can be started with HTTPS support, it is recommended to
 employ a reverse proxy such as nginx. See sample-nginx.conf for an example nginx
 configuration.
 
 A new auxillary database backend using PostgreSQL was introduced in v0.9.0 that
 provides expanded functionality. However, initial population of the database
-takes additional time and tens of gigabytes of disk storage space. Thus, dcrdata
+takes additional time and tens of gigabytes of disk storage space. Thus, hxdata
 runs by default in a reduced functionality mode that does not require
 PostgreSQL. To enable the PostgreSQL backend (and the expanded functionality),
-dcrdata may be started with the `--pg` switch.
+hxdata may be started with the `--pg` switch.
 
 ### JSON REST API
 
@@ -317,11 +317,11 @@ that other nodes have.
 
 `rebuilddb` is a CLI app that performs a full blockchain scan that fills past
 block data into a SQLite database. This functionality is included in the startup
-of the dcrdata daemon, but may be called alone with rebuilddb.
+of the hxdata daemon, but may be called alone with rebuilddb.
 
 ### rebuilddb2
 
-`rebuilddb2` is a CLI app used for maintenance of dcrdata's `dcrpg` database
+`rebuilddb2` is a CLI app used for maintenance of hxdata's `dcrpg` database
 (a.k.a. DB v2) that uses PostgreSQL to store a nearly complete record of the
 Decred blockchain data. See the [README.md](./cmd/rebuilddb2/README.md) for
 `rebuilddb2` for important usage information.
@@ -361,7 +361,7 @@ from dcrd.
 ## Internal-use packages
 
 Packages `blockdata` and `dcrsqlite` are currently designed only for internal
-use internal use by other dcrdata packages, but they may be of general value in
+use internal use by other hxdata packages, but they may be of general value in
 the future.
 
 `blockdata` defines:
@@ -387,7 +387,7 @@ the future.
 * A `sql.DB` wrapper type (`DB`) with the necessary SQLite queries for
   storage and retrieval of block and stake data.
 * The `wiredDB` type, intended to satisfy the `DataSourceLite` interface used by
-  the dcrdata app's API. The block header is not stored in the DB, so a RPC
+  the hxdata app's API. The block header is not stored in the DB, so a RPC
   client is used by `wiredDB` to get it on demand. `wiredDB` also includes
   methods to resync the database file.
 
@@ -420,10 +420,10 @@ the latest version via:
 **To update `dep` from the network, it is important to use the `-u` flag as
 shown above.**
 
-Note that all dcrdata.org community and team members are expected to adhere to
+Note that all hxdata.org community and team members are expected to adhere to
 the code of conduct, described in the CODE_OF_CONDUCT file.
 
-Also, [come chat with us on Slack](https://join.slack.com/t/dcrdata/shared_invite/enQtMjQ2NzAzODk0MjQ3LTRkZGJjOWIyNDc0MjBmOThhN2YxMzZmZGRlYmVkZmNkNmQ3MGQyNzAxMzJjYzU1MzA2ZGIwYTIzMTUxMjM3ZDY)!
+Also, [come chat with us on Slack](https://join.slack.com/t/hxdata/shared_invite/enQtMjQ2NzAzODk0MjQ3LTRkZGJjOWIyNDc0MjBmOThhN2YxMzZmZGRlYmVkZmNkNmQ3MGQyNzAxMzJjYzU1MzA2ZGIwYTIzMTUxMjM3ZDY)!
 
 ## License
 

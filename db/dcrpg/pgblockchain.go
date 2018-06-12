@@ -1,4 +1,4 @@
-// Copyright (c) 2017, The dcrdata developers
+// Copyright (c) 2017, The hxdata developers
 // See LICENSE for details.
 
 package dcrpg
@@ -271,7 +271,7 @@ func (pgb *ChainDB) VersionCheck() error {
 	return nil
 }
 
-// DropTables drops (deletes) all of the known dcrdata tables.
+// DropTables drops (deletes) all of the known hxdata tables.
 func (pgb *ChainDB) DropTables() {
 	DropTables(pgb.db)
 }

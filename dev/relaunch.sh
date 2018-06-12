@@ -1,7 +1,7 @@
 #!/bin/sh
 
-echo 'Stopping dcrdata...'
-killall -w -INT dcrdata
+echo 'Stopping hxdata...'
+killall -w -INT hxdata
 sleep 1
 
 echo 'Rebuilding...'
@@ -19,4 +19,4 @@ SHORTREV=$(git rev-parse --short HEAD)
 go build -v -ldflags "-X main.CommitHash=${SHORTREV}"
 
 echo 'Launching!'
-./dcrdata
+./hxdata

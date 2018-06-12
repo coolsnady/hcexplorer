@@ -8,7 +8,7 @@ import (
 	"github.com/coolsnady/Explorer/txhelpers"
 )
 
-// much of the time, dcrdata will be using the types in dcrjson, but others are
+// much of the time, hxdata will be using the types in dcrjson, but others are
 // defined here
 
 // BlockTransactions models an array of stake and regular transactions for a

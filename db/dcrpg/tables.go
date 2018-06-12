@@ -1,4 +1,4 @@
-// Copyright (c) 2017, The dcrdata developers
+// Copyright (c) 2017, The hxdata developers
 // See LICENSE for details.
 
 package dcrpg
@@ -33,7 +33,7 @@ var createTypeStatements = map[string]string{
 // the tables. A bump of this version is used to signal that all tables should
 // be dropped and rebuilt. The minor versions may be different, and they are
 // used to indicate a change requiring a table upgrade, which would be handled
-// by dcrdata or rebuilddb2. The patch versions may also be different. They
+// by hxdata or rebuilddb2. The patch versions may also be different. They
 // indicate a change of a table's index or constraint, which may require
 // re-indexing and a duplicate scan/purge.
 const tableMajor = 2

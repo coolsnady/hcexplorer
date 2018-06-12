@@ -1,4 +1,4 @@
-// Copyright (c) 2017, The dcrdata developers
+// Copyright (c) 2017, The hxdata developers
 // See LICENSE for details.
 
 package api
@@ -180,7 +180,7 @@ func NewAPIRouter(app *appContext, userRealIP bool) apiMux {
 
 	// 	fmt.Println(docgen.MarkdownRoutesDoc(mux, docgen.MarkdownOpts{
 	// 		ProjectPath: "github.com/coolsnady/Explorer",
-	// 		Intro:       "dcrdata HTTP router directory",
+	// 		Intro:       "hxdata HTTP router directory",
 	// 	}))
 	// 	return
 	// }
@@ -211,7 +211,7 @@ func NewAPIRouter(app *appContext, userRealIP bool) apiMux {
 func (mux *apiMux) ListenAndServeProto(listen, proto string) {
 	apiLog.Infof("Now serving on %s://%v/", proto, listen)
 	if proto == "https" {
-		go http.ListenAndServeTLS(listen, "dcrdata.cert", "dcrdata.key", mux)
+		go http.ListenAndServeTLS(listen, "hxdata.cert", "hxdata.key", mux)
 	}
 	go http.ListenAndServe(listen, mux)
 }

@@ -33,10 +33,10 @@ var (
 	defaultHost              = "localhost"
 
 	defaultDBHostPort  = "127.0.0.1:3600"
-	defaultDBUser      = "dcrdata"
+	defaultDBUser      = "hxdata"
 	defaultDBPass      = "bananas"
-	defaultDBTableName = "dcrdata"
-	defaultDBFileName  = "dcrdata.sqlt.db"
+	defaultDBTableName = "hxdata"
+	defaultDBFileName  = "hxdata.sqlt.db"
 )
 
 type config struct {
@@ -233,10 +233,10 @@ func loadConfig() (*config, error) {
 }
 
 // const (
-//     defaultDBTableName = "dcrdata"
-//     defaultDBUserName = "dcrdata"
+//     defaultDBTableName = "hxdata"
+//     defaultDBUserName = "hxdata"
 //     defaultDBPass = "dcrpassword"
-//     defaultDBFileName = "dcrdata.sqlt.dat"
+//     defaultDBFileName = "hxdata.sqlt.dat"
 //     defaultDBHostPort = "127.0.0.1:3660"
 // )
 

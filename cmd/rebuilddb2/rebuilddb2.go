@@ -1,5 +1,5 @@
 // Copyright (c) 2018, The Decred developers
-// Copyright (c) 2017, The dcrdata developers
+// Copyright (c) 2017, The hxdata developers
 // See LICENSE for details.
 
 package main
@@ -54,7 +54,7 @@ func mainCore() error {
 	// Parse the configuration file, and setup logger.
 	cfg, err := loadConfig()
 	if err != nil {
-		fmt.Printf("Failed to load dcrdata config: %s\n", err.Error())
+		fmt.Printf("Failed to load hxdata config: %s\n", err.Error())
 		return err
 	}
 

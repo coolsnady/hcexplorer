@@ -46,7 +46,7 @@ func mainCore() error {
 	// Parse the configuration file, and setup logger.
 	cfg, err := loadConfig()
 	if err != nil {
-		fmt.Printf("Failed to load dcrdata config: %s\n", err.Error())
+		fmt.Printf("Failed to load hxdata config: %s\n", err.Error())
 		return err
 	}
 	defer func() {
@@ -616,7 +616,7 @@ func listenAndServeProto(listen, proto string, mux http.Handler) error {
 	errChan := make(chan error)
 	if proto == "https" {
 		go func() {
-			errChan <- server.ListenAndServeTLS("dcrdata.cert", "dcrdata.key")
+			errChan <- server.ListenAndServeTLS("hxdata.cert", "hxdata.key")
 		}()
 	} else {
 		go func() {

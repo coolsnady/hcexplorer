@@ -1,4 +1,4 @@
-// Copyright (c) 2018, The dcrdata developers.
+// Copyright (c) 2018, The hxdata developers.
 // See LICENSE for details.
 
 package stakedb

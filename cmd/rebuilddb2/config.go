@@ -1,5 +1,5 @@
 // Copyright (c) 2018, The Decred developers
-// Copyright (c) 2017, The dcrdata developers
+// Copyright (c) 2017, The hxdata developers
 // See LICENSE for details.
 
 package main
@@ -38,9 +38,9 @@ var (
 	defaultHost              = "localhost"
 
 	defaultDBHostPort = "127.0.0.1:5432"
-	defaultDBUser     = "dcrdata"
+	defaultDBUser     = "hxdata"
 	defaultDBPass     = ""
-	defaultDBName     = "dcrdata"
+	defaultDBName     = "hxdata"
 )
 
 type config struct {
