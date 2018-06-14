@@ -30,9 +30,9 @@ var activeNet = &netparams.MainNetParams
 var activeChain = &chaincfg.MainNetParams
 
 var (
-	dcrdHomeDir = dcrutil.AppDataDir("dcrd", false)
+	hxdHomeDir = dcrutil.AppDataDir("hxd", false)
 	//rebuilddbHomeDir            = dcrutil.AppDataDir("rebuilddb", false)
-	defaultDaemonRPCCertFile = filepath.Join(dcrdHomeDir, "rpc.cert")
+	defaultDaemonRPCCertFile = filepath.Join(hxdHomeDir, "rpc.cert")
 	defaultConfigFile        = filepath.Join(curDir, defaultConfigFilename)
 	defaultLogDir            = filepath.Join(curDir, defaultLogDirname)
 	defaultHost              = "localhost"
@@ -68,10 +68,10 @@ type config struct {
 	TicketSpendInfoBatch   bool   `short:"T" long:"ticketspends-batch" description:"Batch update the tickets table spending transaction info after rebuild (instead of during the rebuild)."`
 
 	// RPC client options
-	DcrdUser         string `long:"dcrduser" description:"Daemon RPC user name"`
-	DcrdPass         string `long:"dcrdpass" description:"Daemon RPC password"`
-	DcrdServ         string `long:"dcrdserv" description:"Hostname/IP and port of dcrd RPC server to connect to (default localhost:9109, testnet: localhost:19109, simnet: localhost:19556)"`
-	DcrdCert         string `long:"dcrdcert" description:"File containing the dcrd certificate file"`
+	HxdUser         string `long:"hxduser" description:"Daemon RPC user name"`
+	HxdPass         string `long:"hxdpass" description:"Daemon RPC password"`
+	HxdServ         string `long:"hxdserv" description:"Hostname/IP and port of hxd RPC server to connect to (default localhost:9109, testnet: localhost:19109, simnet: localhost:19556)"`
+	HxdCert         string `long:"hxdcert" description:"File containing the hxd certificate file"`
 	DisableDaemonTLS bool   `long:"nodaemontls" description:"Disable TLS for the daemon RPC client -- NOTE: This is only allowed if the RPC client is connecting to localhost"`
 }
 
@@ -84,7 +84,7 @@ var (
 		DBUser:     defaultDBUser,
 		DBPass:     defaultDBPass,
 		DBName:     defaultDBName,
-		DcrdCert:   defaultDaemonRPCCertFile,
+		HxdCert:   defaultDaemonRPCCertFile,
 	}
 )
 
@@ -93,7 +93,7 @@ var (
 func cleanAndExpandPath(path string) string {
 	// Expand initial ~ to OS specific home directory.
 	if strings.HasPrefix(path, "~") {
-		homeDir := filepath.Dir(dcrdHomeDir)
+		homeDir := filepath.Dir(hxdHomeDir)
 		path = strings.Replace(path, "~", homeDir, 1)
 	}
 
@@ -204,8 +204,8 @@ func loadConfig() (*config, error) {
 
 	// Set the host names and ports to the default if the
 	// user does not specify them.
-	if cfg.DcrdServ == "" {
-		cfg.DcrdServ = defaultHost + ":" + activeNet.JSONRPCClientPort
+	if cfg.HxdServ == "" {
+		cfg.HxdServ = defaultHost + ":" + activeNet.JSONRPCClientPort
 	}
 
 	// Append the network type to the log directory so it is "namespaced"

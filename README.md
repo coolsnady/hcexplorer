@@ -36,7 +36,7 @@ The hxdata repository is a collection of golang packages and apps for [Decred](h
 ## Requirements
 
 * [Go](http://golang.org) 1.9.x or 1.10.x.
-* Running `dcrd` (>=1.1.2) synchronized to the current best block on the network.
+* Running `hxd` (>=1.1.2) synchronized to the current best block on the network.
 
 ## Installation
 
@@ -112,7 +112,7 @@ Begin with the sample configuration file:
 cp sample-hxdata.conf hxdata.conf
 ```
 
-Then edit hxdata.conf with your dcrd RPC settings. After you are finished, move
+Then edit hxdata.conf with your hxd RPC settings. After you are finished, move
 hxdata.conf to the `appdata` folder (default is `~/.hxdata` on Linux,
 `%localappdata%\Dcrdata` on Windows). See the output of `hxdata --help` for a list
 of all options and their default values.
@@ -133,9 +133,9 @@ command line tool:
 * In case of irrecoverable errors, such as detected schema changes without an
   upgrade path, the tables and their indexes may be dropped with `rebuilddb2 -D`.
 
-Note that hxdata requires that [dcrd](https://docs.decred.org/getting-started/user-guides/dcrd-setup/) is running with optional indexes enabled.  By default these indexes are not turned on when dcrd is installed.
+Note that hxdata requires that [hxd](https://docs.decred.org/getting-started/user-guides/hxd-setup/) is running with optional indexes enabled.  By default these indexes are not turned on when hxd is installed.
 
-In dcrd.conf set:
+In hxd.conf set:
 ```
 txindex=1
 addrindex=1
@@ -170,8 +170,8 @@ several components including:
 ### Block Explorer
 
 After hxdata syncs with the blockchain server via RPC, by default it will begin
-listening for HTTP connections on `http://127.0.0.1:7777/`. This means it starts
-a web server listening on IPv4 localhost, port 7777. Both the interface and port
+listening for HTTP connections on `http://127.0.0.1:7778/`. This means it starts
+a web server listening on IPv4 localhost, port 7778. Both the interface and port
 are configurable. The block explorer and the JSON API are both provided by the
 server on this port. See [JSON REST API](#json-rest-api) for details.
 
@@ -189,7 +189,7 @@ hxdata may be started with the `--pg` switch.
 ### JSON REST API
 
 The API serves JSON data over HTTP(S). **All API endpoints are currently
-prefixed with `/api`** (e.g. `http://localhost:7777/api/stake`).
+prefixed with `/api`** (e.g. `http://localhost:7778/api/stake`).
 
 #### Endpoint List
 
@@ -305,10 +305,10 @@ option.
 ## Important Note About Mempool
 
 Although there is mempool data collection and serving, it is **very important**
-to keep in mind that the mempool in your node (dcrd) is not likely to be exactly
+to keep in mind that the mempool in your node (hxd) is not likely to be exactly
 the same as other nodes' mempool.  Also, your mempool is cleared out when you
-shutdown dcrd.  So, if you have recently (e.g. after the start of the current
-ticket price window) started dcrd, your mempool _will_ be missing transactions
+shutdown hxd.  So, if you have recently (e.g. after the start of the current
+ticket price window) started hxd, your mempool _will_ be missing transactions
 that other nodes have.
 
 ## Command Line Utilities
@@ -353,7 +353,7 @@ pool value quickly.  It uses the `database.DB` type from
 `github.com/coolsnady/hxd/database/ffldb`.  It also makes use of the `stake.Node`
 type from `github.com/coolsnady/hxd/blockchain/stake`.  The `ChainMonitor` type
 handles connecting new blocks and chain reorganization in response to notifications
-from dcrd.
+from hxd.
 
 `package txhelpers` includes helper functions for working with the common types
 `dcrutil.Tx`, `dcrutil.Block`, `chainhash.Hash`, and others.

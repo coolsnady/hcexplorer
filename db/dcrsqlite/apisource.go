@@ -506,7 +506,7 @@ func (db *wiredDB) getRawTransaction(txid string) (*apitypes.Tx, string) {
 	return tx, txraw.Hex
 }
 
-// GetVoteVersionInfo requests stake version info from the dcrd RPC server
+// GetVoteVersionInfo requests stake version info from the hxd RPC server
 func (db *wiredDB) GetVoteVersionInfo(ver uint32) (*dcrjson.GetVoteInfoResult, error) {
 	return db.client.GetVoteInfo(ver)
 }
@@ -1319,7 +1319,7 @@ func (db *wiredDB) UnconfirmedTxnsForAddress(address string) (*txhelpers.Address
 	// Check each transaction for involvement with provided address.
 	addressOutpoints := txhelpers.NewAddressOutpoints(address)
 	for hash, tx := range mempoolTxns {
-		// Transaction details from dcrd
+		// Transaction details from hxd
 		txhash, err1 := chainhash.NewHashFromStr(hash)
 		if err1 != nil {
 			log.Errorf("Invalid transaction hash %s", hash)

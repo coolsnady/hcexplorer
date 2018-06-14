@@ -39,13 +39,13 @@ var (
 	defaultConfigFile        = filepath.Join(defaultHomeDir, defaultConfigFilename)
 	defaultLogDir            = filepath.Join(defaultHomeDir, defaultLogDirname)
 	defaultDataDir           = filepath.Join(defaultHomeDir, defaultDataDirname)
-	dcrdHomeDir              = dcrutil.AppDataDir("dcrd", false)
-	defaultDaemonRPCCertFile = filepath.Join(dcrdHomeDir, "rpc.cert")
+	hxdHomeDir              = dcrutil.AppDataDir("hxd", false)
+	defaultDaemonRPCCertFile = filepath.Join(hxdHomeDir, "rpc.cert")
 
 	defaultHost               = "localhost"
 	defaultHTTPProfPath       = "/p"
 	defaultAPIProto           = "http"
-	defaultAPIListen          = "127.0.0.1:7777"
+	defaultAPIListen          = "127.0.0.1:7778"
 	defaultIndentJSON         = "   "
 	defaultCacheControlMaxAge = 86400
 
@@ -108,10 +108,10 @@ type config struct {
 	// EmailSubject string `long:"emailsubj" description:"Email subject. (default \"dcrdataapi transaction notification\")"`
 
 	// RPC client options
-	DcrdUser         string `long:"dcrduser" description:"Daemon RPC user name"`
-	DcrdPass         string `long:"dcrdpass" description:"Daemon RPC password"`
-	DcrdServ         string `long:"dcrdserv" description:"Hostname/IP and port of dcrd RPC server to connect to (default localhost:9109, testnet: localhost:19109, simnet: localhost:19556)"`
-	DcrdCert         string `long:"dcrdcert" description:"File containing the dcrd certificate file"`
+	HxdUser         string `long:"hxduser" description:"Daemon RPC user name"`
+	HxdPass         string `long:"hxdpass" description:"Daemon RPC password"`
+	HxdServ         string `long:"hxdserv" description:"Hostname/IP and port of hxd RPC server to connect to (default localhost:9109, testnet: localhost:19109, simnet: localhost:19556)"`
+	HxdCert         string `long:"hxdcert" description:"File containing the hxd certificate file"`
 	DisableDaemonTLS bool   `long:"nodaemontls" description:"Disable TLS for the daemon RPC client -- NOTE: This is only allowed if the RPC client is connecting to localhost"`
 }
 
@@ -128,7 +128,7 @@ var (
 		APIListen:          defaultAPIListen,
 		IndentJSON:         defaultIndentJSON,
 		CacheControlMaxAge: defaultCacheControlMaxAge,
-		DcrdCert:           defaultDaemonRPCCertFile,
+		HxdCert:           defaultDaemonRPCCertFile,
 		MonitorMempool:     defaultMonitorMempool,
 		MempoolMinInterval: defaultMempoolMinInterval,
 		MempoolMaxInterval: defaultMempoolMaxInterval,
@@ -416,8 +416,8 @@ func loadConfig() (*config, error) {
 
 	// Set the host names and ports to the default if the user does not specify
 	// them.
-	if cfg.DcrdServ == "" {
-		cfg.DcrdServ = defaultHost + ":" + activeNet.JSONRPCClientPort
+	if cfg.HxdServ == "" {
+		cfg.HxdServ = defaultHost + ":" + activeNet.JSONRPCClientPort
 	}
 
 	// Output folder
@@ -452,7 +452,7 @@ func loadConfig() (*config, error) {
 }
 
 // netName returns the name used when referring to a decred network.  At the
-// time of writing, dcrd currently places blocks for testnet version 0 in the
+// time of writing, hxd currently places blocks for testnet version 0 in the
 // data and log directory "testnet", which does not match the Name field of the
 // chaincfg parameters.  This function can be used to override this directory
 // name as "testnet2" when the passed active network matches wire.TestNet2.

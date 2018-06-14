@@ -207,7 +207,7 @@ func (t *Collector) CollectBlockInfo(hash *chainhash.Hash) (*apitypes.BlockDataB
 // CollectHash collects chain data at the block with the specified hash.
 func (t *Collector) CollectHash(hash *chainhash.Hash) (*BlockData, *wire.MsgBlock, error) {
 	// In case of a very fast block, make sure previous call to collect is not
-	// still running, or dcrd may be mad.
+	// still running, or hxd may be mad.
 	t.mtx.Lock()
 	defer t.mtx.Unlock()
 
@@ -249,7 +249,7 @@ func (t *Collector) CollectHash(hash *chainhash.Hash) (*BlockData, *wire.MsgBloc
 // Collect collects chain data at the current best block.
 func (t *Collector) Collect() (*BlockData, *wire.MsgBlock, error) {
 	// In case of a very fast block, make sure previous call to collect is not
-	// still running, or dcrd may be mad.
+	// still running, or hxd may be mad.
 	t.mtx.Lock()
 	defer t.mtx.Unlock()
 
@@ -275,7 +275,7 @@ func (t *Collector) Collect() (*BlockData, *wire.MsgBlock, error) {
 	select {
 	case bbs = <-toch:
 	case <-time.After(time.Second * 10):
-		log.Errorf("Timeout waiting for dcrd.")
+		log.Errorf("Timeout waiting for hxd.")
 		return nil, nil, errors.New("Timeout")
 	}
 

@@ -24,7 +24,7 @@ type BlockGetter interface {
 }
 
 // MasterBlockGetter builds on BlockGetter, adding functions that fetch blocks
-// directly from dcrd via RPC and subsequently update the internal block cache
+// directly from hxd via RPC and subsequently update the internal block cache
 // with the retrieved block.
 type MasterBlockGetter interface {
 	BlockGetter
@@ -103,7 +103,7 @@ func (g *BlockGate) SetFetchToHeight(height int64) {
 	g.fetchToHeight = height
 }
 
-// NodeHeight gets the chain height from dcrd.
+// NodeHeight gets the chain height from hxd.
 func (g *BlockGate) NodeHeight() (int64, error) {
 	_, height, err := g.client.GetBestBlock()
 	return height, err
@@ -176,7 +176,7 @@ func (g *BlockGate) UpdateToNextBlock() (*dcrutil.Block, error) {
 }
 
 // UpdateToBlock gets the block at the specified height on the main chain from
-// dcrd and stores it in cache.
+// hxd and stores it in cache.
 func (g *BlockGate) UpdateToBlock(height int64) (*dcrutil.Block, error) {
 	g.Lock()
 	defer g.Unlock()

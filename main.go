@@ -85,7 +85,7 @@ func mainCore() error {
 		log.Info(`Running in "Lite" mode with only SQLite backend and limited functionality.`)
 	}
 
-	// Connect to dcrd RPC server using websockets
+	// Connect to hxd RPC server using websockets
 
 	// Set up the notification handler to deliver blocks through a channel.
 	notify.MakeNtfnChans(cfg.MonitorMempool, usePG)
@@ -94,7 +94,7 @@ func mainCore() error {
 	ntfnHandlers, collectionQueue := notify.MakeNodeNtfnHandlers()
 	dcrdClient, nodeVer, err := connectNodeRPC(cfg, ntfnHandlers)
 	if err != nil || dcrdClient == nil {
-		return fmt.Errorf("Connection to dcrd failed: %v", err)
+		return fmt.Errorf("Connection to hxd failed: %v", err)
 	}
 
 	defer func() {
@@ -102,7 +102,7 @@ func mainCore() error {
 		notify.CloseNtfnChans()
 
 		if dcrdClient != nil {
-			log.Infof("Closing connection to dcrd.")
+			log.Infof("Closing connection to hxd.")
 			dcrdClient.Shutdown()
 		}
 
@@ -113,9 +113,9 @@ func mainCore() error {
 	// Display connected network
 	curnet, err := dcrdClient.GetCurrentNet()
 	if err != nil {
-		return fmt.Errorf("Unable to get current network from dcrd: %v", err)
+		return fmt.Errorf("Unable to get current network from hxd: %v", err)
 	}
-	log.Infof("Connected to dcrd (JSON-RPC API v%s) on %v",
+	log.Infof("Connected to hxd (JSON-RPC API v%s) on %v",
 		nodeVer.String(), curnet.String())
 
 	if curnet != activeNet.Net {
@@ -357,7 +357,7 @@ func mainCore() error {
 	}
 	log.Infof("All ready, at height %d.", baseDBHeight)
 
-	// Register for notifications from dcrd
+	// Register for notifications from hxd
 	cerr := notify.RegisterNodeNtfnHandlers(dcrdClient)
 	if cerr != nil {
 		return fmt.Errorf("RPC client error: %v (%v)", cerr.Error(), cerr.Cause())
@@ -601,8 +601,8 @@ func waitForSync(base chan dbtypes.SyncResult, aux chan dbtypes.SyncResult,
 }
 
 func connectNodeRPC(cfg *config, ntfnHandlers *rpcclient.NotificationHandlers) (*rpcclient.Client, semver.Semver, error) {
-	return rpcutils.ConnectNodeRPC(cfg.DcrdServ, cfg.DcrdUser, cfg.DcrdPass,
-		cfg.DcrdCert, cfg.DisableDaemonTLS, ntfnHandlers)
+	return rpcutils.ConnectNodeRPC(cfg.HxdServ, cfg.HxdUser, cfg.HxdPass,
+		cfg.HxdCert, cfg.DisableDaemonTLS, ntfnHandlers)
 }
 
 func listenAndServeProto(listen, proto string, mux http.Handler) error {

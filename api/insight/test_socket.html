@@ -5,9 +5,9 @@
   </head>
   <body>
     <div id="updates"></div>
-    <script src="http://localhost:7777/js/socket.io.slim.js"></script>
+    <script src="http://localhost:7778/js/socket.io.slim.js"></script>
     <script>
-        var socket = io('http://localhost:7777', {path: '/insight/socket.io', transports: ['websocket'], upgrade: false});
+        var socket = io('http://localhost:7778', {path: '/insight/socket.io', transports: ['websocket'], upgrade: false});
         
         var updates = document.getElementById('updates')
         

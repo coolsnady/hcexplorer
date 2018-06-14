@@ -23,7 +23,7 @@ import (
 	"github.com/coolsnady/hxwallet/wallet/udb"
 )
 
-// RegisterNodeNtfnHandlers registers with dcrd to receive new block,
+// RegisterNodeNtfnHandlers registers with hxd to receive new block,
 // transaction and winning ticket notifications.
 func RegisterNodeNtfnHandlers(dcrdClient *rpcclient.Client) *ContextualError {
 	var err error
@@ -136,7 +136,7 @@ func (q *collectionQueue) ProcessBlocks() {
 // 	return b
 // }
 
-// MakeNodeNtfnHandlers defines the dcrd notification handlers
+// MakeNodeNtfnHandlers defines the hxd notification handlers
 func MakeNodeNtfnHandlers() (*rpcclient.NotificationHandlers, *collectionQueue) {
 	blockQueue := NewCollectionQueue()
 	go blockQueue.ProcessBlocks()
@@ -236,7 +236,7 @@ func MakeNodeNtfnHandlers() (*rpcclient.NotificationHandlers, *collectionQueue) 
 		},
 
 		// OnTxAcceptedVerbose is invoked same as OnTxAccepted but is used here
-		// for the mempool monitors to avoid an extra call to dcrd for
+		// for the mempool monitors to avoid an extra call to hxd for
 		// the tx details
 		OnTxAcceptedVerbose: func(txDetails *dcrjson.TxRawResult) {
 

@@ -343,7 +343,7 @@ func (exp *explorerUI) addRoutes() {
 }
 
 // Simulate ticket purchase and re-investment over a full year for a given
-// starting amount of DCR and calculation parameters.  Generate a TEXT table of
+// starting amount of HXD and calculation parameters.  Generate a TEXT table of
 // the simulation results that can optionally be used for future expansion of
 // hxdata functionality.
 func (exp *explorerUI) simulateASR(StartingDCRBalance float64, IntegerTicketQty bool,
@@ -394,7 +394,7 @@ func (exp *explorerUI) simulateASR(StartingDCRBalance float64, IntegerTicketQty 
 	TicketPrice := ActualTicketPrice
 	DCRBalance := StartingDCRBalance
 
-	ReturnTable += fmt.Sprintf("\n\nBLOCKNUM        DCR  TICKETS TKT_PRICE TKT_REWRD  ACTION\n")
+	ReturnTable += fmt.Sprintf("\n\nBLOCKNUM        HXD  TICKETS TKT_PRICE TKT_REWRD  ACTION\n")
 	ReturnTable += fmt.Sprintf("%8d  %9.2f %8.1f %9.2f %9.2f    INIT\n",
 		int64(simblock), DCRBalance, TicketsPurchased,
 		TicketPrice, StakeRewardAtBlock(simblock))
