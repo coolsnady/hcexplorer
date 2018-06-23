@@ -356,7 +356,7 @@ handles connecting new blocks and chain reorganization in response to notificati
 from hxd.
 
 `package txhelpers` includes helper functions for working with the common types
-`dcrutil.Tx`, `dcrutil.Block`, `chainhash.Hash`, and others.
+`hxutil.Tx`, `hxutil.Block`, `chainhash.Hash`, and others.
 
 ## Internal-use packages
 

@@ -11,7 +11,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/dcrjson"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/rpcclient"
 	"github.com/coolsnady/hxd/wire"
 	apitypes "github.com/coolsnady/Explorer/api/types"
@@ -147,7 +147,7 @@ func (t *Collector) CollectBlockInfo(hash *chainhash.Hash) (*apitypes.BlockDataB
 		return nil, nil, nil, nil, nil, err
 	}
 	height := msgBlock.Header.Height
-	block := dcrutil.NewBlock(msgBlock)
+	block := hxutil.NewBlock(msgBlock)
 	txLen := len(block.Transactions())
 	coinSupply, err := t.dcrdChainSvr.GetCoinSupply()
 	if err != nil {
@@ -179,7 +179,7 @@ func (t *Collector) CollectBlockInfo(hash *chainhash.Hash) (*apitypes.BlockDataB
 	// Work/Stake difficulty
 	header := block.MsgBlock().Header
 	diff := txhelpers.GetDifficultyRatio(header.Bits, t.netParams)
-	sdiff := dcrutil.Amount(header.SBits).ToCoin()
+	sdiff := hxutil.Amount(header.SBits).ToCoin()
 
 	blockHeaderResults, err := t.dcrdChainSvr.GetBlockHeaderVerbose(hash)
 	if err != nil {

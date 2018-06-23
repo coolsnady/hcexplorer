@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/txscript"
 	"github.com/coolsnady/hxd/wire"
 	apitypes "github.com/coolsnady/Explorer/api/types"
@@ -1121,7 +1121,7 @@ func RetrieveAddressTxnOutputWithTransaction(db *sql.DB, address string, current
 			log.Error(err)
 		}
 		txnOutput.ScriptPubKey = hex.EncodeToString(pkScript)
-		txnOutput.Amount = dcrutil.Amount(atoms).ToCoin()
+		txnOutput.Amount = hxutil.Amount(atoms).ToCoin()
 		txnOutput.Satoshis = atoms
 		txnOutput.Height = blockHeight
 		txnOutput.Confirmations = currentBlockHeight - blockHeight + 1
@@ -1527,8 +1527,8 @@ func InsertTickets(db *sql.DB, dbTxns []*dbtypes.Tx, txDbIDs []uint64, checked b
 			isMultisig = scriptSubClass == txscript.MultiSigTy
 		}
 
-		price := dcrutil.Amount(tx.Vouts[0].Value).ToCoin()
-		fee := dcrutil.Amount(tx.Fees).ToCoin()
+		price := hxutil.Amount(tx.Vouts[0].Value).ToCoin()
+		fee := hxutil.Amount(tx.Fees).ToCoin()
 		isSplit := tx.NumVin > 1
 
 		var id uint64
@@ -1619,7 +1619,7 @@ func InsertVotes(db *sql.DB, dbTxns []*dbtypes.Tx, _ /*txDbIDs*/ []uint64,
 			return nil, nil, nil, nil, nil, err
 		}
 
-		stakeSubmissionAmount := dcrutil.Amount(msgTx.TxIn[1].ValueIn).ToCoin()
+		stakeSubmissionAmount := hxutil.Amount(msgTx.TxIn[1].ValueIn).ToCoin()
 		stakeSubmissionTxHash := msgTx.TxIn[1].PreviousOutPoint.Hash.String()
 		spentTicketHashes = append(spentTicketHashes, stakeSubmissionTxHash)
 
@@ -1637,7 +1637,7 @@ func InsertVotes(db *sql.DB, dbTxns []*dbtypes.Tx, _ /*txDbIDs*/ []uint64,
 		}
 		spentTicketDbIDs = append(spentTicketDbIDs, uint64(ticketTxDbID.Int64))
 
-		voteReward := dcrutil.Amount(msgTx.TxIn[0].ValueIn).ToCoin()
+		voteReward := hxutil.Amount(msgTx.TxIn[0].ValueIn).ToCoin()
 
 		// delete spent ticket from missed list
 		for im := range misses {

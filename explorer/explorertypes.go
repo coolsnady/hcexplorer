@@ -11,7 +11,7 @@ import (
 
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/dcrjson"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/Explorer/db/dbtypes"
 	"github.com/coolsnady/Explorer/txhelpers"
 )
@@ -35,8 +35,8 @@ type TxBasic struct {
 	TxID          string
 	FormattedSize string
 	Total         float64
-	Fee           dcrutil.Amount
-	FeeRate       dcrutil.Amount
+	Fee           hxutil.Amount
+	FeeRate       hxutil.Amount
 	VoteInfo      *VoteInfo
 	Coinbase      bool
 }
@@ -172,7 +172,7 @@ type BlockInfo struct {
 	PreviousHash          string
 	NextHash              string
 	TotalSent             float64
-	MiningFee             dcrutil.Amount
+	MiningFee             hxutil.Amount
 	StakeValidationHeight int64
 }
 
@@ -207,9 +207,9 @@ type AddressInfo struct {
 	NumTransactions int64 // The number of transactions in the address
 	NumFundingTxns  int64 // number paying to the address
 	NumSpendingTxns int64 // number spending outpoints associated with the address
-	AmountReceived  dcrutil.Amount
-	AmountSent      dcrutil.Amount
-	AmountUnspent   dcrutil.Amount
+	AmountReceived  hxutil.Amount
+	AmountSent      hxutil.Amount
+	AmountUnspent   hxutil.Amount
 
 	// Balance is used in full mode, describing all known transactions
 	Balance *AddressBalance
@@ -323,7 +323,7 @@ func ReduceAddressHistory(addrHist []*dbtypes.AddressRow) *AddressInfo {
 	var received, sent int64
 	var transactions, creditTxns, debitTxns []*AddressTx
 	for _, addrOut := range addrHist {
-		coin := dcrutil.Amount(addrOut.Value).ToCoin()
+		coin := hxutil.Amount(addrOut.Value).ToCoin()
 
 		// Funding transaction
 		received += int64(addrOut.Value)
@@ -358,9 +358,9 @@ func ReduceAddressHistory(addrHist []*dbtypes.AddressRow) *AddressInfo {
 		TxnsSpending:    debitTxns,
 		NumFundingTxns:  int64(len(creditTxns)),
 		NumSpendingTxns: int64(len(debitTxns)),
-		AmountReceived:  dcrutil.Amount(received),
-		AmountSent:      dcrutil.Amount(sent),
-		AmountUnspent:   dcrutil.Amount(received - sent),
+		AmountReceived:  hxutil.Amount(received),
+		AmountSent:      hxutil.Amount(sent),
+		AmountUnspent:   hxutil.Amount(received - sent),
 	}
 }
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/dcrjson"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 	"github.com/coolsnady/Explorer/blockdata"
 	"github.com/coolsnady/Explorer/txhelpers"
@@ -59,7 +59,7 @@ func NewSocketServer(newTxChan chan *NewTx, params *chaincfg.Params) (*SocketSer
 			if len(room) > 64 || !isAlphaNumeric(room) {
 				return
 			}
-			if addr, err := dcrutil.DecodeAddress(room); err == nil {
+			if addr, err := hxutil.DecodeAddress(room); err == nil {
 				if addr.IsForNet(params) {
 					so.Join(room)
 					apiLog.Debugf("socket.io client joining room: %s", room)

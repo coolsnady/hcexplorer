@@ -14,7 +14,7 @@ import (
 
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 	"github.com/coolsnady/Explorer/db/dbtypes"
 	"github.com/coolsnady/Explorer/txhelpers"
@@ -507,7 +507,7 @@ func (exp *explorerUI) AddressPage(w http.ResponseWriter, r *http.Request) {
 				InOutID:       f.Index,
 				FormattedSize: humanize.Bytes(uint64(fundingTx.Tx.SerializeSize())),
 				Total:         txhelpers.TotalOutFromMsgTx(fundingTx.Tx).ToCoin(),
-				ReceivedTotal: dcrutil.Amount(fundingTx.Tx.TxOut[f.Index].Value).ToCoin(),
+				ReceivedTotal: hxutil.Amount(fundingTx.Tx.TxOut[f.Index].Value).ToCoin(),
 			}
 			uctxn.Transactions = append(uctxn.Transactions, addrTx)
 			uctxn.TxnsFunding = append(uctxn.TxnsFunding, addrTx)
@@ -529,7 +529,7 @@ func (exp *explorerUI) AddressPage(w http.ResponseWriter, r *http.Request) {
 				InOutID:       uint32(f.InputIndex),
 				FormattedSize: humanize.Bytes(uint64(spendingTx.Tx.SerializeSize())),
 				Total:         txhelpers.TotalOutFromMsgTx(spendingTx.Tx).ToCoin(),
-				SentTotal:     dcrutil.Amount(spendingTx.Tx.TxIn[f.InputIndex].ValueIn).ToCoin(),
+				SentTotal:     hxutil.Amount(spendingTx.Tx.TxIn[f.InputIndex].ValueIn).ToCoin(),
 			}
 			uctxn.Transactions = append(uctxn.Transactions, addrTx)
 			uctxn.TxnsSpending = append(uctxn.TxnsSpending, addrTx)

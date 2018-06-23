@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/Explorer/txhelpers"
 )
 
@@ -128,7 +128,7 @@ out:
 			}
 
 			msgBlock, _ := p.collector.dcrdChainSvr.GetBlock(hash)
-			block := dcrutil.NewBlock(msgBlock)
+			block := hxutil.NewBlock(msgBlock)
 			height := block.Height()
 			log.Infof("Block height %v connected. Collecting data...", height)
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/dcrjson"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/rpcclient"
 	"github.com/coolsnady/hxd/wire"
 	"github.com/coolsnady/Explorer/api/insight"
@@ -225,7 +225,7 @@ func MakeNodeNtfnHandlers() (*rpcclient.NotificationHandlers, *collectionQueue) 
 			if err != nil {
 				return
 			}
-			tx := dcrutil.NewTx(&rec.MsgTx)
+			tx := hxutil.NewTx(&rec.MsgTx)
 			txHash := rec.Hash
 			select {
 			case NtfnChans.RelevantTxMempoolChan <- tx:

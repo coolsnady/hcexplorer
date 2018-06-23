@@ -20,7 +20,7 @@ import (
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
 	"github.com/coolsnady/hxd/dcrjson"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/rpcclient"
 	apitypes "github.com/coolsnady/Explorer/api/types"
 	"github.com/coolsnady/Explorer/db/dbtypes"
@@ -312,7 +312,7 @@ func (c *insightApiContext) getAddressesTxnOutput(w http.ResponseWriter, r *http
 					TxnID:         fundingTx.Hash().String(),
 					Vout:          f.Index,
 					ScriptPubKey:  hex.EncodeToString(fundingTx.Tx.TxOut[f.Index].PkScript),
-					Amount:        dcrutil.Amount(fundingTx.Tx.TxOut[f.Index].Value).ToCoin(),
+					Amount:        hxutil.Amount(fundingTx.Tx.TxOut[f.Index].Value).ToCoin(),
 					Satoshis:      fundingTx.Tx.TxOut[f.Index].Value,
 					Confirmations: 0,
 					BlockTime:     fundingTx.MemPoolTime,
@@ -421,7 +421,7 @@ func (c *insightApiContext) getAddressesTxn(w http.ResponseWriter, r *http.Reque
 
 	// Confirm all addresses are valid and pull unconfirmed transactions for all addresses
 	for _, addr := range addresses {
-		address, err := dcrutil.DecodeAddress(addr)
+		address, err := hxutil.DecodeAddress(addr)
 		if err != nil {
 			writeInsightError(w, fmt.Sprintf("Address is invalid (%s)", addr))
 			return

@@ -16,7 +16,7 @@ import (
 
 	flags "github.com/btcsuite/go-flags"
 	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 	"github.com/coolsnady/Explorer/version"
 	"github.com/coolsnady/hxwallet/netparams"
@@ -35,11 +35,11 @@ var activeNet = &netparams.MainNetParams
 var activeChain = &chaincfg.MainNetParams
 
 var (
-	defaultHomeDir           = dcrutil.AppDataDir("hxdata", false)
+	defaultHomeDir           = hxutil.AppDataDir("hxdata", false)
 	defaultConfigFile        = filepath.Join(defaultHomeDir, defaultConfigFilename)
 	defaultLogDir            = filepath.Join(defaultHomeDir, defaultLogDirname)
 	defaultDataDir           = filepath.Join(defaultHomeDir, defaultDataDirname)
-	hxdHomeDir              = dcrutil.AppDataDir("hxd", false)
+	hxdHomeDir              = hxutil.AppDataDir("hxd", false)
 	defaultDaemonRPCCertFile = filepath.Join(hxdHomeDir, "rpc.cert")
 
 	defaultHost               = "localhost"

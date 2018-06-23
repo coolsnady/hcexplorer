@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	apitypes "github.com/coolsnady/Explorer/api/types"
 	"github.com/coolsnady/Explorer/rpcutils"
 	"github.com/coolsnady/Explorer/txhelpers"
@@ -157,7 +157,7 @@ func (db *wiredDB) resyncDB(quit chan struct{}, blockGetter rpcutils.BlockGetter
 		}
 
 		// Either fetch the block or wait for a signal that it is ready
-		var block *dcrutil.Block
+		var block *hxutil.Block
 		var blockhash chainhash.Hash
 		if master || i < fetchToHeight {
 			// Not coordinating with blockGetter for this block
@@ -232,7 +232,7 @@ func (db *wiredDB) resyncDB(quit chan struct{}, blockGetter rpcutils.BlockGetter
 			Size:       header.Size,
 			Hash:       blockhash.String(),
 			Difficulty: diffRatio,
-			StakeDiff:  dcrutil.Amount(header.SBits).ToCoin(),
+			StakeDiff:  hxutil.Amount(header.SBits).ToCoin(),
 			Time:       header.Timestamp.Unix(),
 			PoolInfo:   *tpi,
 		}
@@ -284,7 +284,7 @@ func (db *wiredDB) resyncDB(quit chan struct{}, blockGetter rpcutils.BlockGetter
 	return height, nil
 }
 
-func (db *wiredDB) getBlock(ind int64) (*dcrutil.Block, *chainhash.Hash, error) {
+func (db *wiredDB) getBlock(ind int64) (*hxutil.Block, *chainhash.Hash, error) {
 	blockhash, err := db.client.GetBlockHash(ind)
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetBlockHash(%d) failed: %v", ind, err)
@@ -295,7 +295,7 @@ func (db *wiredDB) getBlock(ind int64) (*dcrutil.Block, *chainhash.Hash, error) 
 		return nil, blockhash,
 			fmt.Errorf("GetBlock failed (%s): %v", blockhash, err)
 	}
-	block := dcrutil.NewBlock(msgBlock)
+	block := hxutil.NewBlock(msgBlock)
 
 	return block, blockhash, nil
 }

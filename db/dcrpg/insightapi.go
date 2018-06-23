@@ -5,7 +5,7 @@ package dcrpg
 
 import (
 	"github.com/coolsnady/hxd/dcrjson"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 	apitypes "github.com/coolsnady/Explorer/api/types"
 	"github.com/coolsnady/Explorer/db/dbtypes"
 	"github.com/coolsnady/Explorer/explorer"
@@ -75,7 +75,7 @@ func (pgb *ChainDB) RetrieveAddressIDsByOutpoint(txHash string,
 // TODO: Does this really need all the prev vout extra data?
 func (pgb *ChainDBRPC) InsightGetAddressTransactions(addr string, count,
 	skip int) []*dcrjson.SearchRawTransactionsResult {
-	address, err := dcrutil.DecodeAddress(addr)
+	address, err := hxutil.DecodeAddress(addr)
 	if err != nil {
 		log.Infof("Invalid address %s: %v", addr, err)
 		return nil
@@ -161,10 +161,10 @@ func (pgb *ChainDB) GetAddressInfo(address string, N, offset int64) *apitypes.In
 		return nil
 	}
 
-	var totalReceived, totalSent, unSpent dcrutil.Amount
-	totalReceived, _ = dcrutil.NewAmount(float64(balance.TotalSpent + balance.TotalUnspent))
-	totalSent, _ = dcrutil.NewAmount(float64(balance.TotalSpent))
-	unSpent, _ = dcrutil.NewAmount(float64(balance.TotalUnspent))
+	var totalReceived, totalSent, unSpent hxutil.Amount
+	totalReceived, _ = hxutil.NewAmount(float64(balance.TotalSpent + balance.TotalUnspent))
+	totalSent, _ = hxutil.NewAmount(float64(balance.TotalSpent))
+	unSpent, _ = hxutil.NewAmount(float64(balance.TotalUnspent))
 
 	var transactionIdList []string
 	for _, row := range rows {

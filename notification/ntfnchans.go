@@ -6,7 +6,7 @@ package notification
 
 import (
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrutil"
+	"github.com/coolsnady/hxd/hxutil"
 
 	"github.com/coolsnady/Explorer/api/insight"
 	"github.com/coolsnady/Explorer/blockdata"
@@ -44,7 +44,7 @@ var NtfnChans struct {
 	UpdateStatusNodeHeight            chan uint32
 	UpdateStatusDBHeight              chan uint32
 	SpendTxBlockChan, RecvTxBlockChan chan *txhelpers.BlockWatchedTx
-	RelevantTxMempoolChan             chan *dcrutil.Tx
+	RelevantTxMempoolChan             chan *hxutil.Tx
 	NewTxChan                         chan *mempool.NewTx
 	ExpNewTxChan                      chan *explorer.NewMempoolTx
 	InsightNewTxChan                  chan *insight.NewTx
@@ -79,7 +79,7 @@ func MakeNtfnChans(monitorMempool, postgresEnabled bool) {
 	// // recv/SpendTxBlockChan come with connected blocks
 	// 	NtfnChans.RecvTxBlockChan = make(chan *txhelpers.BlockWatchedTx, blockConnChanBuffer)
 	// 	NtfnChans.SpendTxBlockChan = make(chan *txhelpers.BlockWatchedTx, blockConnChanBuffer)
-	// 	NtfnChans.RelevantTxMempoolChan = make(chan *dcrutil.Tx, relevantMempoolTxChanBuffer)
+	// 	NtfnChans.RelevantTxMempoolChan = make(chan *hxutil.Tx, relevantMempoolTxChanBuffer)
 	// }
 
 	if monitorMempool {
