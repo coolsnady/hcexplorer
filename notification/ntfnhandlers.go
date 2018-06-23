@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/rpcclient"
 	"github.com/coolsnady/hxd/wire"
@@ -238,7 +238,7 @@ func MakeNodeNtfnHandlers() (*rpcclient.NotificationHandlers, *collectionQueue) 
 		// OnTxAcceptedVerbose is invoked same as OnTxAccepted but is used here
 		// for the mempool monitors to avoid an extra call to hxd for
 		// the tx details
-		OnTxAcceptedVerbose: func(txDetails *dcrjson.TxRawResult) {
+		OnTxAcceptedVerbose: func(txDetails *hxjson.TxRawResult) {
 
 			select {
 			case NtfnChans.ExpNewTxChan <- &explorer.NewMempoolTx{

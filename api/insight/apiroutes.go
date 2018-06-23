@@ -19,7 +19,7 @@ import (
 
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/rpcclient"
 	apitypes "github.com/coolsnady/Explorer/api/types"
@@ -126,7 +126,7 @@ func (c *insightApiContext) getTransaction(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	txsOld := []*dcrjson.TxRawResult{txOld}
+	txsOld := []*hxjson.TxRawResult{txOld}
 
 	// convert to insight struct
 	txsNew, err := c.TxConverter(txsOld)
@@ -386,7 +386,7 @@ func (c *insightApiContext) getTransactions(w http.ResponseWriter, r *http.Reque
 		}
 
 		txsOutput := struct {
-			Txs []*dcrjson.SearchRawTransactionsResult `json:"txs"`
+			Txs []*hxjson.SearchRawTransactionsResult `json:"txs"`
 		}{
 			txs,
 		}
@@ -487,7 +487,7 @@ func (c *insightApiContext) getAddressesTxn(w http.ResponseWriter, r *http.Reque
 	addressOutput.From = int(from)
 	addressOutput.To = int(to)
 
-	txsOld := []*dcrjson.TxRawResult{}
+	txsOld := []*hxjson.TxRawResult{}
 	for _, rawTx := range rawTxs {
 		txOld, err := c.BlockData.GetRawTransaction(rawTx)
 		if err != nil {

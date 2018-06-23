@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/rpcclient"
 	apitypes "github.com/coolsnady/Explorer/api/types"
 	"github.com/coolsnady/Explorer/db/dbtypes"
@@ -32,23 +32,23 @@ type DataSourceLite interface {
 	GetBlockHash(idx int64) (string, error)
 	GetBlockHeight(hash string) (int64, error)
 	//Get(idx int) *blockdata.BlockData
-	GetHeader(idx int) *dcrjson.GetBlockHeaderVerboseResult
-	GetBlockVerbose(idx int, verboseTx bool) *dcrjson.GetBlockVerboseResult
-	GetBlockVerboseByHash(hash string, verboseTx bool) *dcrjson.GetBlockVerboseResult
+	GetHeader(idx int) *hxjson.GetBlockHeaderVerboseResult
+	GetBlockVerbose(idx int, verboseTx bool) *hxjson.GetBlockVerboseResult
+	GetBlockVerboseByHash(hash string, verboseTx bool) *hxjson.GetBlockVerboseResult
 	GetRawTransaction(txid string) *apitypes.Tx
 	GetTransactionHex(txid string) string
 	GetTrimmedTransaction(txid string) *apitypes.TrimmedTx
 	GetRawTransactionWithPrevOutAddresses(txid string) (*apitypes.Tx, [][]string)
 	GetVoteInfo(txid string) (*apitypes.VoteInfo, error)
-	GetVoteVersionInfo(ver uint32) (*dcrjson.GetVoteInfoResult, error)
-	GetStakeVersions(txHash string, count int32) (*dcrjson.GetStakeVersionsResult, error)
-	GetStakeVersionsLatest() (*dcrjson.StakeVersions, error)
+	GetVoteVersionInfo(ver uint32) (*hxjson.GetVoteInfoResult, error)
+	GetStakeVersions(txHash string, count int32) (*hxjson.GetStakeVersionsResult, error)
+	GetStakeVersionsLatest() (*hxjson.StakeVersions, error)
 	GetAllTxIn(txid string) []*apitypes.TxIn
 	GetAllTxOut(txid string) []*apitypes.TxOut
 	GetTransactionsForBlock(idx int64) *apitypes.BlockTransactions
 	GetTransactionsForBlockByHash(hash string) *apitypes.BlockTransactions
-	GetFeeInfo(idx int) *dcrjson.FeeInfoBlock
-	//GetStakeDiffEstimate(idx int) *dcrjson.EstimateStakeDiffResult
+	GetFeeInfo(idx int) *hxjson.FeeInfoBlock
+	//GetStakeDiffEstimate(idx int) *hxjson.EstimateStakeDiffResult
 	GetStakeInfoExtended(idx int) *apitypes.StakeInfoExtended
 	//needs db update: GetStakeInfoExtendedByHash(hash string) *apitypes.StakeInfoExtended
 	GetStakeDiffEstimates() *apitypes.StakeDiff
@@ -618,7 +618,7 @@ func (c *appContext) getStakeDiffCurrent(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	stakeDiffCurrent := dcrjson.GetStakeDifficultyResult{
+	stakeDiffCurrent := hxjson.GetStakeDifficultyResult{
 		CurrentStakeDifficulty: stakeDiff.CurrentStakeDifficulty,
 		NextStakeDifficulty:    stakeDiff.NextStakeDifficulty,
 	}

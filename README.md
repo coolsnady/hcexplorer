@@ -197,35 +197,35 @@ prefixed with `/api`** (e.g. `http://localhost:7778/api/stake`).
 | --- | --- | --- |
 | Summary | `/block/best` | `types.BlockDataBasic` |
 | Stake info |  `/block/best/pos` | `types.StakeInfoExtended` |
-| Header |  `/block/best/header` | `dcrjson.GetBlockHeaderVerboseResult` |
+| Header |  `/block/best/header` | `hxjson.GetBlockHeaderVerboseResult` |
 | Hash |  `/block/best/hash` | `string` |
 | Height | `/block/best/height` | `int` |
 | Size | `/block/best/size` | `int32` |
 | Transactions | `/block/best/tx` | `types.BlockTransactions` |
 | Transactions Count | `/block/best/tx/count` | `types.BlockTransactionCounts` |
-| Verbose block result | `/block/best/verbose` | `dcrjson.GetBlockVerboseResult` |
+| Verbose block result | `/block/best/verbose` | `hxjson.GetBlockVerboseResult` |
 
 | Block X (block index) | Path | Type |
 | --- | --- | --- |
 | Summary | `/block/X` | `types.BlockDataBasic` |
 | Stake info |  `/block/X/pos` | `types.StakeInfoExtended` |
-| Header |  `/block/X/header` | `dcrjson.GetBlockHeaderVerboseResult` |
+| Header |  `/block/X/header` | `hxjson.GetBlockHeaderVerboseResult` |
 | Hash |  `/block/X/hash` | `string` |
 | Size | `/block/X/size` | `int32` |
 | Transactions | `/block/X/tx` | `types.BlockTransactions` |
 | Transactions Count | `/block/X/tx/count` | `types.BlockTransactionCounts` |
-| Verbose block result | `/block/X/verbose` | `dcrjson.GetBlockVerboseResult` |
+| Verbose block result | `/block/X/verbose` | `hxjson.GetBlockVerboseResult` |
 
 | Block H (block hash) | Path | Type |
 | --- | --- | --- |
 | Summary | `/block/hash/H` | `types.BlockDataBasic` |
 | Stake info |  `/block/hash/H/pos` | `types.StakeInfoExtended` |
-| Header |  `/block/hash/H/header` | `dcrjson.GetBlockHeaderVerboseResult` |
+| Header |  `/block/hash/H/header` | `hxjson.GetBlockHeaderVerboseResult` |
 | Height |  `/block/hash/H/height` | `int` |
 | Size | `/block/hash/H/size` | `int32` |
 | Transactions | `/block/hash/H/tx` | `types.BlockTransactions` |
 | Transactions Count | `/block/hash/H/tx/count` | `types.BlockTransactionCounts` |
-| Verbose block result | `/block/hash/H/verbose` | `dcrjson.GetBlockVerboseResult` |
+| Verbose block result | `/block/hash/H/verbose` | `hxjson.GetBlockVerboseResult` |
 
 | Block range (X < Y) | Path | Type |
 | --- | --- | --- |
@@ -256,8 +256,8 @@ prefixed with `/api`** (e.g. `http://localhost:7778/api/stake`).
 | Current sdiff and estimates | `/stake/diff` | `types.StakeDiff` |
 | Sdiff for block `X` | `/stake/diff/b/X` | `[]float64` |
 | Sdiff for block range `[X,Y] (X <= Y)` | `/stake/diff/r/X/Y` | `[]float64` |
-| Current sdiff separately | `/stake/diff/current` | `dcrjson.GetStakeDifficultyResult` |
-| Estimates separately | `/stake/diff/estimates` | `dcrjson.EstimateStakeDiffResult` |
+| Current sdiff separately | `/stake/diff/current` | `hxjson.GetStakeDifficultyResult` |
+| Estimates separately | `/stake/diff/estimates` | `hxjson.EstimateStakeDiffResult` |
 
 | Ticket Pool | Path | Type |
 | --- | --- | --- |
@@ -280,7 +280,7 @@ parsing more efficient for the client.
 
 | Vote and Agenda Info | Path | Type |
 | --- | --- | --- |
-| The current agenda and its status | `/stake/vote/info` | `dcrjson.GetVoteInfoResult` |
+| The current agenda and its status | `/stake/vote/info` | `hxjson.GetVoteInfoResult` |
 
 | Mempool | Path | Type |
 | --- | --- | --- |

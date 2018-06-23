@@ -17,7 +17,7 @@ import (
 	"github.com/coolsnady/hxd/blockchain/stake"
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/rpcclient"
 	apitypes "github.com/coolsnady/Explorer/api/types"
@@ -286,7 +286,7 @@ type MempoolData struct {
 	NumTickets        uint32
 	NumVotes          uint32
 	NewTickets        uint32
-	Ticketfees        *dcrjson.TicketFeeInfoResult
+	Ticketfees        *hxjson.TicketFeeInfoResult
 	MinableFees       *MinableFeeInfo
 	AllTicketsDetails TicketsDetails
 }
@@ -334,12 +334,12 @@ func (t *mempoolDataCollector) Collect() (*MempoolData, error) {
 
 	// Get a map of ticket hashes to getrawmempool results
 	// mempoolTickets[ticketHashes[0].String()].Fee
-	mempoolTickets, err := c.GetRawMempoolVerbose(dcrjson.GRMTickets)
+	mempoolTickets, err := c.GetRawMempoolVerbose(hxjson.GRMTickets)
 	if err != nil {
 		return nil, err
 	}
 
-	mempoolVotes, err := c.GetRawMempoolVerbose(dcrjson.GRMVotes)
+	mempoolVotes, err := c.GetRawMempoolVerbose(hxjson.GRMVotes)
 	if err != nil {
 		return nil, err
 	}

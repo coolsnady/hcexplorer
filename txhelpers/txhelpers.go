@@ -21,7 +21,7 @@ import (
 	"github.com/coolsnady/hxd/blockchain/stake"
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/txscript"
 	"github.com/coolsnady/hxd/wire"
@@ -43,7 +43,7 @@ type RawTransactionGetter interface {
 // required by functions that would otherwise require a rpcclient.Client just
 // for GetRawTransactionVerbose.
 type VerboseTransactionGetter interface {
-	GetRawTransactionVerbose(txHash *chainhash.Hash) (*dcrjson.TxRawResult, error)
+	GetRawTransactionVerbose(txHash *chainhash.Hash) (*hxjson.TxRawResult, error)
 }
 
 // BlockWatchedTx contains, for a certain block, the transactions for certain
@@ -628,8 +628,8 @@ func SSGenVoteChoices(tx *wire.MsgTx, params *chaincfg.Params) (BlockValidation,
 
 // FeeInfoBlock computes ticket fee statistics for the tickets included in the
 // specified block.
-func FeeInfoBlock(block *hxutil.Block) *dcrjson.FeeInfoBlock {
-	feeInfo := new(dcrjson.FeeInfoBlock)
+func FeeInfoBlock(block *hxutil.Block) *hxjson.FeeInfoBlock {
+	feeInfo := new(hxjson.FeeInfoBlock)
 	_, sstxMsgTxns := TicketsInBlock(block)
 
 	feeInfo.Height = uint32(block.Height())
@@ -681,8 +681,8 @@ func FeeInfoBlock(block *hxutil.Block) *dcrjson.FeeInfoBlock {
 
 // FeeRateInfoBlock computes ticket fee rate statistics for the tickets included
 // in the specified block.
-func FeeRateInfoBlock(block *hxutil.Block) *dcrjson.FeeInfoBlock {
-	feeInfo := new(dcrjson.FeeInfoBlock)
+func FeeRateInfoBlock(block *hxutil.Block) *hxjson.FeeInfoBlock {
+	feeInfo := new(hxjson.FeeInfoBlock)
 	_, sstxMsgTxns := TicketsInBlock(block)
 
 	feeInfo.Height = uint32(block.Height())
@@ -817,8 +817,8 @@ func TotalOutFromMsgTx(msgTx *wire.MsgTx) hxutil.Amount {
 	return hxutil.Amount(amtOut)
 }
 
-// TotalVout computes the total value of a slice of dcrjson.Vout
-func TotalVout(vouts []dcrjson.Vout) hxutil.Amount {
+// TotalVout computes the total value of a slice of hxjson.Vout
+func TotalVout(vouts []hxjson.Vout) hxutil.Amount {
 	var total hxutil.Amount
 	for _, v := range vouts {
 		a, err := hxutil.NewAmount(v.Value)

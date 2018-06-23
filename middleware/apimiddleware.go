@@ -14,7 +14,7 @@ import (
 	"strconv"
 
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	apitypes "github.com/coolsnady/Explorer/api/types"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/docgen"
@@ -50,7 +50,7 @@ type DataSource interface {
 	GetBlockHash(idx int64) (string, error)
 }
 
-type StakeVersionsLatest func() (*dcrjson.StakeVersions, error)
+type StakeVersionsLatest func() (*hxjson.StakeVersions, error)
 
 // GetBlockStepCtx retrieves the ctxBlockStep data from the request context. If
 // not set, the return value is -1.

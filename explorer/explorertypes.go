@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/Explorer/db/dbtypes"
 	"github.com/coolsnady/Explorer/txhelpers"
@@ -131,7 +131,7 @@ type BlockValidation struct {
 
 // Vin models basic data about a tx input for display
 type Vin struct {
-	*dcrjson.Vin
+	*hxjson.Vin
 	Addresses       []string
 	FormattedAmount string
 }
@@ -266,7 +266,7 @@ type HomeInfo struct {
 	PoolInfo          TicketPoolInfo `json:"pool_info"`
 }
 
-// BlockSubsidy is an implementation of dcrjson.GetBlockSubsidyResult
+// BlockSubsidy is an implementation of hxjson.GetBlockSubsidyResult
 type BlockSubsidy struct {
 	Total int64 `json:"total"`
 	PoW   int64 `json:"pow"`

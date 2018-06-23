@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 	"github.com/coolsnady/Explorer/blockdata"
@@ -45,14 +45,14 @@ type explorerDataSourceLite interface {
 	GetBlockHash(idx int64) (string, error)
 	GetExplorerTx(txid string) *TxInfo
 	GetExplorerAddress(address string, count, offset int64) *AddressInfo
-	DecodeRawTransaction(txhex string) (*dcrjson.TxRawResult, error)
+	DecodeRawTransaction(txhex string) (*hxjson.TxRawResult, error)
 	SendRawTransaction(txhex string) (string, error)
 	GetHeight() int
 	GetChainParams() *chaincfg.Params
 	UnconfirmedTxnsForAddress(address string) (*txhelpers.AddressOutpoints, int64, error)
 	GetMempool() []MempoolTx
 	TxHeight(txid string) (height int64)
-	BlockSubsidy(height int64, voters uint16) *dcrjson.GetBlockSubsidyResult
+	BlockSubsidy(height int64, voters uint16) *hxjson.GetBlockSubsidyResult
 }
 
 // explorerDataSource implements extra data retrieval functions that require a

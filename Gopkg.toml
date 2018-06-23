@@ -43,7 +43,7 @@
   version = "1.1.0"
 
 [[constraint]]
-  branch = "master"
+  branch = "blissMerge"
   name = "github.com/coolsnady/hxd"
 
 [[constraint]]
@@ -98,7 +98,6 @@
   branch = "master"
   name = "golang.org/x/net"
 
-  
 [[constraint]]
   name = "github.com/decred/slog"
   version = "1.0.0"

@@ -10,7 +10,7 @@ import (
 
 	"github.com/coolsnady/hxd/chaincfg"
 	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/rpcclient"
 	"github.com/coolsnady/hxd/wire"
@@ -22,11 +22,11 @@ import (
 // BlockData contains all the data collected by a Collector and stored
 // by a BlockDataSaver. TODO: consider if pointers are desirable here.
 type BlockData struct {
-	Header           dcrjson.GetBlockHeaderVerboseResult
+	Header           hxjson.GetBlockHeaderVerboseResult
 	Connections      int32
-	FeeInfo          dcrjson.FeeInfoBlock
-	CurrentStakeDiff dcrjson.GetStakeDifficultyResult
-	EstStakeDiff     dcrjson.EstimateStakeDiffResult
+	FeeInfo          hxjson.FeeInfoBlock
+	CurrentStakeDiff hxjson.GetStakeDifficultyResult
+	EstStakeDiff     hxjson.EstimateStakeDiffResult
 	PoolInfo         apitypes.TicketPoolInfo
 	ExtraInfo        apitypes.BlockExplorerExtraInfo
 	PriceWindowNum   int
@@ -140,7 +140,7 @@ func (t *Collector) CollectAPITypes(hash *chainhash.Hash) (*apitypes.BlockDataBa
 // the block data required by Collect() that is specific to the block with the
 // given hash.
 func (t *Collector) CollectBlockInfo(hash *chainhash.Hash) (*apitypes.BlockDataBasic,
-	*dcrjson.FeeInfoBlock, *dcrjson.GetBlockHeaderVerboseResult,
+	*hxjson.FeeInfoBlock, *hxjson.GetBlockHeaderVerboseResult,
 	*apitypes.BlockExplorerExtraInfo, *wire.MsgBlock, error) {
 	msgBlock, err := t.dcrdChainSvr.GetBlock(hash)
 	if err != nil {
@@ -235,8 +235,8 @@ func (t *Collector) CollectHash(hash *chainhash.Hash) (*BlockData, *wire.MsgBloc
 		Header:           *blockHeaderVerbose,
 		Connections:      int32(numConn),
 		FeeInfo:          *feeInfoBlock,
-		CurrentStakeDiff: dcrjson.GetStakeDifficultyResult{CurrentStakeDifficulty: blockDataBasic.StakeDiff},
-		EstStakeDiff:     dcrjson.EstimateStakeDiffResult{},
+		CurrentStakeDiff: hxjson.GetStakeDifficultyResult{CurrentStakeDifficulty: blockDataBasic.StakeDiff},
+		EstStakeDiff:     hxjson.EstimateStakeDiffResult{},
 		PoolInfo:         blockDataBasic.PoolInfo,
 		ExtraInfo:        *extra,
 		PriceWindowNum:   int(height / winSize),
@@ -289,7 +289,7 @@ func (t *Collector) Collect() (*BlockData, *wire.MsgBlock, error) {
 	estStakeDiff, err := t.dcrdChainSvr.EstimateStakeDiff(nil)
 	if err != nil {
 		log.Warn("estimatestakediff is broken: ", err)
-		estStakeDiff = &dcrjson.EstimateStakeDiffResult{}
+		estStakeDiff = &hxjson.EstimateStakeDiffResult{}
 	}
 
 	// Info specific to the block hash

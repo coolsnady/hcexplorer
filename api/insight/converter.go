@@ -5,18 +5,18 @@
 package insight
 
 import (
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	apitypes "github.com/coolsnady/Explorer/api/types"
 )
 
 // TxConverter converts hxd-tx to insight tx
-func (c *insightApiContext) TxConverter(txs []*dcrjson.TxRawResult) ([]apitypes.InsightTx, error) {
+func (c *insightApiContext) TxConverter(txs []*hxjson.TxRawResult) ([]apitypes.InsightTx, error) {
 	return c.TxConverterWithParams(txs, false, false, false)
 }
 
 // TxConverterWithParams takes struct with filter params
-func (c *insightApiContext) TxConverterWithParams(txs []*dcrjson.TxRawResult, noAsm bool, noScriptSig bool, noSpent bool) ([]apitypes.InsightTx, error) {
+func (c *insightApiContext) TxConverterWithParams(txs []*hxjson.TxRawResult, noAsm bool, noScriptSig bool, noSpent bool) ([]apitypes.InsightTx, error) {
 	newTxs := []apitypes.InsightTx{}
 	for _, tx := range txs {
 

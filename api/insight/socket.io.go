@@ -10,7 +10,7 @@ import (
 	"github.com/googollee/go-socket.io"
 
 	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/dcrjson"
+	"github.com/coolsnady/hxd/hxjson"
 	"github.com/coolsnady/hxd/hxutil"
 	"github.com/coolsnady/hxd/wire"
 	"github.com/coolsnady/Explorer/blockdata"
@@ -141,5 +141,5 @@ type WebSocketTx struct {
 // NewTx models data from the notification handler
 type NewTx struct {
 	Hex   string
-	Vouts []dcrjson.Vout
+	Vouts []hxjson.Vout
 }
