@@ -1,5 +1,3 @@
-// Copyright (c) 2018, The Decred developers
-// Copyright (c) 2018, The hxdata developers
 // Copyright (c) 2017, Jonathan Chappelow
 // See LICENSE for details.
 
@@ -9,39 +7,33 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
-	"github.com/coolsnady/hxd/hxutil"
-	"github.com/coolsnady/hxd/rpcclient"
-	"github.com/coolsnady/hxd/wire"
-	apitypes "github.com/coolsnady/Explorer/api/types"
-	"github.com/coolsnady/Explorer/rpcutils"
-	"github.com/coolsnady/Explorer/txhelpers"
-	"github.com/oleiade/lane"
+	apitypes "github.com/coolsnady/hcexplorer/dcrdataapi"
+	"github.com/coolsnady/hcexplorer/rpcutils"
+	"github.com/coolsnady/hcexplorer/txhelpers"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
+	"github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcrpcclient"
+	"github.com/coolsnady/hcd/wire"
 )
 
 // PoolInfoCache contains a map of block hashes to ticket pool info data at that
 // block height.
 type PoolInfoCache struct {
 	sync.RWMutex
-	poolInfo    map[chainhash.Hash]*apitypes.TicketPoolInfo
-	expireQueue *lane.Queue
-	maxSize     int
+	poolInfo map[chainhash.Hash]*apitypes.TicketPoolInfo
 }
 
 // NewPoolInfoCache constructs a new PoolInfoCache, and is needed to initialize
 // the internal map.
-func NewPoolInfoCache(size int) *PoolInfoCache {
+func NewPoolInfoCache() *PoolInfoCache {
 	return &PoolInfoCache{
-		poolInfo:    make(map[chainhash.Hash]*apitypes.TicketPoolInfo),
-		expireQueue: lane.NewQueue(),
-		maxSize:     size,
+		poolInfo: make(map[chainhash.Hash]*apitypes.TicketPoolInfo),
 	}
 }
 
@@ -60,90 +52,40 @@ func (c *PoolInfoCache) Set(hash chainhash.Hash, p *apitypes.TicketPoolInfo) {
 	c.Lock()
 	defer c.Unlock()
 	c.poolInfo[hash] = p
-	c.expireQueue.Enqueue(hash)
-	if c.expireQueue.Size() >= c.maxSize {
-		expireHash := c.expireQueue.Dequeue().(chainhash.Hash)
-		delete(c.poolInfo, expireHash)
-	}
-}
-
-// SetCapacity sets the cache capacity to the specified number of elements. If
-// the new capacity is smaller than the current cache size, elements are
-// automatically evicted until the desired size is reached.
-func (c *PoolInfoCache) SetCapacity(cap int) error {
-	c.Lock()
-	defer c.Unlock()
-	c.maxSize = cap
-	for c.expireQueue.Size() >= c.maxSize {
-		expireHash, ok := c.expireQueue.Dequeue().(chainhash.Hash)
-		if !ok {
-			return fmt.Errorf("failed to reduce pool cache capacity")
-		}
-		delete(c.poolInfo, expireHash)
-	}
-	return nil
 }
 
 // StakeDatabase models data for the stake database
 type StakeDatabase struct {
 	params          *chaincfg.Params
-	NodeClient      *rpcclient.Client
+	NodeClient      *hcrpcclient.Client
 	nodeMtx         sync.RWMutex
 	StakeDB         database.DB
 	BestNode        *stake.Node
 	blkMtx          sync.RWMutex
-	blockCache      map[int64]*hxutil.Block
+	blockCache      map[int64]*hcutil.Block
 	liveTicketMtx   sync.Mutex
 	liveTicketCache map[chainhash.Hash]int64
 	poolInfo        *PoolInfoCache
-	PoolDB          *TicketPool
-
-	// clients may register for notification when new blocks are connected via
-	// WaitForHeight. The clients' channels are stored in heightWaiters.
-	waitMtx       sync.Mutex
-	heightWaiters map[int64][]chan *chainhash.Hash
 }
 
 const (
 	// dbType is the database backend type to use
 	dbType = "ffldb"
-	// DefaultStakeDbName is the default name of the stakedb database folder
-	DefaultStakeDbName = "stakenodes"
-	// DefaultTicketPoolDbName is the default name of the ticket pool database
-	DefaultTicketPoolDbName = "ticket_pool.db"
+	// DefaultStakeDbName is the default database name
+	DefaultStakeDbName = "ffldb_stake"
 )
 
 // NewStakeDatabase creates a StakeDatabase instance, opening or creating a new
 // ffldb-backed stake database, and loads all live tickets into a cache.
-func NewStakeDatabase(client *rpcclient.Client, params *chaincfg.Params,
-	dbFolder string) (*StakeDatabase, error) {
-	// Create DB folder
-	err := os.MkdirAll(dbFolder, 0700)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create DB folder: %v", err)
-	}
-	log.Infof("Loading ticket pool DB. This may take a minute...")
-	ticketPoolDBPath := filepath.Join(dbFolder, DefaultTicketPoolDbName)
-	poolDB, err := NewTicketPool(ticketPoolDBPath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to open ticket pool DB: %v", err)
-	}
+func NewStakeDatabase(client *hcrpcclient.Client, params *chaincfg.Params) (*StakeDatabase, error) {
 	sDB := &StakeDatabase{
 		params:          params,
 		NodeClient:      client,
-		blockCache:      make(map[int64]*hxutil.Block),
+		blockCache:      make(map[int64]*hcutil.Block),
 		liveTicketCache: make(map[chainhash.Hash]int64),
-		poolInfo:        NewPoolInfoCache(513),
-		PoolDB:          poolDB,
-		heightWaiters:   make(map[int64][]chan *chainhash.Hash),
+		poolInfo:        NewPoolInfoCache(),
 	}
-
-	// Put the genesis block in the pool info cache since stakedb starts with
-	// genesis. Hence it will never be connected, how TPI is usually cached.
-	sDB.poolInfo.Set(*params.GenesisHash, &apitypes.TicketPoolInfo{})
-
-	stakeDBPath := filepath.Join(dbFolder, DefaultStakeDbName)
-	if err = sDB.Open(stakeDBPath); err != nil {
+	if err := sDB.Open(); err != nil {
 		return nil, err
 	}
 
@@ -152,34 +94,7 @@ func NewStakeDatabase(client *rpcclient.Client, params *chaincfg.Params,
 		log.Errorf("Unable to get best block height: %v", err)
 	}
 
-	// Check if stake DB and ticket pool DB are at the same height, and attempt
-	// to recover.
-	heightStakeDB, heightTicketPool := int64(sDB.Height()), sDB.PoolDB.Tip()
-	if heightStakeDB != heightTicketPool {
-		if heightStakeDB > heightTicketPool {
-			return nil, fmt.Errorf("StakeDB height (%d) and TicketPool (%d) height not equal. "+
-				"Delete both and try again.", sDB.Height(), sDB.PoolDB.Tip())
-		}
-
-		// Trim ticket pool DB back to the height of the stake DB
-		for heightTicketPool > heightStakeDB {
-			heightTicketPool = sDB.PoolDB.Trim()
-		}
-		if heightTicketPool != heightStakeDB {
-			return nil, fmt.Errorf("unable to trim pool DB to height %d, at %d",
-				heightStakeDB, heightTicketPool)
-		}
-	}
-
-	log.Infof("Advancing ticket pool DB to tip via diffs...")
-	if err = poolDB.AdvanceToTip(); err != nil {
-		return nil, fmt.Errorf("failed to advance ticket pool DB to tip: %v", err)
-	}
-
-	// Pre-populate the live ticket cache if stakedb is close enough to the
-	// network height that the live tickets returned by the node are likely to
-	// be required to advance the stakedb.
-	if heightStakeDB >= nodeHeight-int64(params.TicketPoolSize)/4 {
+	if int64(sDB.Height()) >= nodeHeight-int64(params.TicketPoolSize)/4 {
 
 		liveTickets, err := sDB.NodeClient.LiveTickets()
 		if err != nil {
@@ -189,7 +104,7 @@ func NewStakeDatabase(client *rpcclient.Client, params *chaincfg.Params,
 		log.Info("Pre-populating live ticket cache...")
 
 		type promiseGetRawTransaction struct {
-			result rpcclient.FutureGetRawTransactionResult
+			result hcrpcclient.FutureGetRawTransactionResult
 			ticket *chainhash.Hash
 		}
 		promisesGetRawTransaction := make([]promiseGetRawTransaction, 0, len(liveTickets))
@@ -222,7 +137,7 @@ func NewStakeDatabase(client *rpcclient.Client, params *chaincfg.Params,
 
 		// Old synchronous way
 		// for _, hash := range liveTickets {
-		// 	var txid *hxutil.Tx
+		// 	var txid *hcutil.Tx
 		// 	txid, err = sDB.NodeClient.GetRawTransaction(hash)
 		// 	if err != nil {
 		// 		log.Errorf("Unable to get transaction %v: %v\n", hash, err)
@@ -237,69 +152,23 @@ func NewStakeDatabase(client *rpcclient.Client, params *chaincfg.Params,
 	return sDB, nil
 }
 
-// LockStakeNode locks the StakeNode from functions that respect the mutex.
-func (db *StakeDatabase) LockStakeNode() {
-	db.nodeMtx.RLock()
-}
-
-// UnlockStakeNode unlocks the StakeNode for functions that respect the mutex.
-func (db *StakeDatabase) UnlockStakeNode() {
-	db.nodeMtx.RUnlock()
-}
-
-// WaitForHeight provides a notification channel to which the hash of the block
-// at the requested height will be sent when it becomes available.
-func (db *StakeDatabase) WaitForHeight(height int64) chan *chainhash.Hash {
-	dbHeight := int64(db.Height())
-	waitChan := make(chan *chainhash.Hash, 1)
-	if dbHeight > height {
-		defer func() { waitChan <- nil }()
-		return waitChan
-	} else if dbHeight == height {
-		block, _ := db.block(height)
-		if block == nil {
-			panic("broken StakeDatabase")
-		}
-		defer func() { go db.signalWaiters(height, block.Hash()) }()
-	}
-	db.waitMtx.Lock()
-	db.heightWaiters[height] = append(db.heightWaiters[height], waitChan)
-	db.waitMtx.Unlock()
-	return waitChan
-}
-
-func (db *StakeDatabase) signalWaiters(height int64, blockhash *chainhash.Hash) {
-	db.waitMtx.Lock()
-	defer db.waitMtx.Unlock()
-	waitChans := db.heightWaiters[height]
-	for _, c := range waitChans {
-		select {
-		case c <- blockhash:
-		default:
-			panic(fmt.Sprintf("unable to signal block with hash %v at height %d", blockhash, height))
-		}
-	}
-
-	delete(db.heightWaiters, height)
-}
-
 // Height gets the block height of the best stake node.  It is thread-safe,
 // unlike using db.BestNode.Height(), and checks that the stake database is
 // opened first.
 func (db *StakeDatabase) Height() uint32 {
-	db.nodeMtx.RLock()
-	defer db.nodeMtx.RUnlock()
 	if db == nil || db.BestNode == nil {
 		log.Error("Stake database not yet opened")
 		return 0
 	}
+	db.nodeMtx.RLock()
+	defer db.nodeMtx.RUnlock()
 	return db.BestNode.Height()
 }
 
 // block first tries to find the block at the input height in cache, and if that
 // fails it will request it from the node RPC client. Don't use this casually
 // since reorganization may redefine a block at a given height.
-func (db *StakeDatabase) block(ind int64) (*hxutil.Block, bool) {
+func (db *StakeDatabase) block(ind int64) (*hcutil.Block, bool) {
 	db.blkMtx.RLock()
 	block, ok := db.blockCache[ind]
 	db.blkMtx.RUnlock()
@@ -324,12 +193,12 @@ func (db *StakeDatabase) ForgetBlock(ind int64) {
 
 // ConnectBlockHash is a wrapper for ConnectBlock. For the input block hash, it
 // gets the block from the node RPC client and calls ConnectBlock.
-func (db *StakeDatabase) ConnectBlockHash(hash *chainhash.Hash) (*hxutil.Block, error) {
+func (db *StakeDatabase) ConnectBlockHash(hash *chainhash.Hash) (*hcutil.Block, error) {
 	msgBlock, err := db.NodeClient.GetBlock(hash)
 	if err != nil {
 		return nil, err
 	}
-	block := hxutil.NewBlock(msgBlock)
+	block := hcutil.NewBlock(msgBlock)
 	return block, db.ConnectBlock(block)
 }
 
@@ -337,7 +206,7 @@ func (db *StakeDatabase) ConnectBlockHash(hash *chainhash.Hash) (*hxutil.Block, 
 // the best stake node. This exported function gets any revoked and spend
 // tickets from the input block, and any maturing tickets from the past block in
 // which those tickets would be found, and passes them to connectBlock.
-func (db *StakeDatabase) ConnectBlock(block *hxutil.Block) error {
+func (db *StakeDatabase) ConnectBlock(block *hcutil.Block) error {
 	height := block.Height()
 	maturingHeight := height - int64(db.params.TicketMaturity)
 
@@ -351,55 +220,25 @@ func (db *StakeDatabase) ConnectBlock(block *hxutil.Block) error {
 	}
 
 	db.blkMtx.Lock()
-	db.blockCache[height] = block
+	db.blockCache[block.Height()] = block
 	db.blkMtx.Unlock()
 
 	revokedTickets := txhelpers.RevokedTicketsInBlock(block)
-	votedTickets := txhelpers.TicketsSpentInBlock(block)
+	spentTickets := txhelpers.TicketsSpentInBlock(block)
 
 	db.nodeMtx.Lock()
-	defer db.nodeMtx.Unlock()
 	bestNodeHeight := int64(db.BestNode.Height())
+	db.nodeMtx.Unlock()
 	if height <= bestNodeHeight {
 		return fmt.Errorf("cannot connect block height %d at height %d", height, bestNodeHeight)
 	}
 
-	// who is supposed to vote on this block
-	winners := db.BestNode.Winners()
-
-	// connect it
-	err := db.connectBlock(block, votedTickets, revokedTickets, maturingTickets)
-	if err != nil {
-		return err
-	}
-
-	// Update the ticket pool db. Determine newly missed and expired tickets.
-	justMissed := db.BestNode.MissedByBlock() // includes expired
-	var expiring []chainhash.Hash
-	for i := range justMissed {
-		if db.BestNode.ExistsExpiredTicket(justMissed[i]) {
-			if !db.BestNode.ExistsRevokedTicket(justMissed[i]) {
-				expiring = append(expiring, justMissed[i])
-			}
-		}
-	}
-
-	// Tickets leaving the live ticket pool = winners + expires
-	liveOut := append(winners, expiring...)
-	// Tickets entering the pool = maturing tickets
-	poolDiff := &PoolDiff{
-		In:  maturingTickets,
-		Out: liveOut,
-	}
-
-	defer func() { go db.signalWaiters(height, block.Hash()) }()
-
-	// Append this ticket pool diff
-	return db.PoolDB.Append(poolDiff, bestNodeHeight+1)
+	return db.connectBlock(block, spentTickets, revokedTickets, maturingTickets)
 }
 
-func (db *StakeDatabase) connectBlock(block *hxutil.Block, spent []chainhash.Hash,
+func (db *StakeDatabase) connectBlock(block *hcutil.Block, spent []chainhash.Hash,
 	revoked []chainhash.Hash, maturing []chainhash.Hash) error {
+	db.nodeMtx.Lock()
 
 	cleanLiveTicketCache := func() {
 		db.liveTicketMtx.Lock()
@@ -413,20 +252,12 @@ func (db *StakeDatabase) connectBlock(block *hxutil.Block, spent []chainhash.Has
 	}
 	defer cleanLiveTicketCache()
 
-	hB, err := block.BlockHeaderBytes()
-	if err != nil {
-		return fmt.Errorf("unable to serialize block header: %v", err)
-	}
-
-	bestNode, err := db.BestNode.ConnectNode(stake.CalcHash256PRNGIV(hB),
+	var err error
+	db.BestNode, err = db.BestNode.ConnectNode(block.MsgBlock().Header,
 		spent, revoked, maturing)
 	if err != nil {
 		return err
 	}
-	if bestNode == nil {
-		return fmt.Errorf("failed to ConnectNode at BestNode")
-	}
-	db.BestNode = bestNode
 
 	if err = db.StakeDB.Update(func(dbTx database.Tx) error {
 		return stake.WriteConnectedBestNode(dbTx, db.BestNode, *block.Hash())
@@ -434,27 +265,14 @@ func (db *StakeDatabase) connectBlock(block *hxutil.Block, spent []chainhash.Has
 		return err
 	}
 
+	db.nodeMtx.Unlock()
+
 	// Get ticket pool info at current best (just connected in stakedb) block,
 	// and store it in the StakeDatabase's PoolInfoCache.
-	liveTickets := db.BestNode.LiveTickets() // TODO: use NewTickets() instead and merge with liveTicketCache
-	winningTickets := db.BestNode.Winners()
-	height := db.BestNode.Height()
-	pib := db.calcPoolInfo(liveTickets, winningTickets, height)
-	db.poolInfo.Set(*block.Hash(), pib)
+	tpi, _ := db.PoolInfoBest()
+	db.poolInfo.Set(*block.Hash(), &tpi)
 
 	return err
-}
-
-// SetPoolInfo stores the ticket pool info for the given hash in the pool info
-// cache.
-func (db *StakeDatabase) SetPoolInfo(blockHash chainhash.Hash, tpi *apitypes.TicketPoolInfo) {
-	db.poolInfo.Set(blockHash, tpi)
-}
-
-// SetPoolCacheCapacity sets the pool info cache capacity to the specified
-// number of elements.
-func (db *StakeDatabase) SetPoolCacheCapacity(cap int) error {
-	return db.poolInfo.SetCapacity(cap)
 }
 
 // DisconnectBlock attempts to disconnect the current best block from the stake
@@ -477,42 +295,20 @@ func (db *StakeDatabase) disconnectBlock() error {
 		panic("BestNode and stake DB are inconsistent")
 	}
 
-	// Trim the best block from the ticket pool db
-	poolDBTip := db.PoolDB.Trim()
-	if poolDBTip != parentBlock.Height() {
-		log.Warnf("Pool DB tip (%d) not equal to stakeDB height (%d)!",
-			poolDBTip, parentBlock.Height())
-		// Try to recover by trimming further if a previous disconnect failed
-		for poolDBTip > parentBlock.Height() {
-			poolDBTip = db.PoolDB.Trim()
-		}
-		if poolDBTip != parentBlock.Height() {
-			log.Errorf("Unable to trim pool DB!")
-		}
-	}
-
 	childUndoData := append(stake.UndoTicketDataSlice(nil), db.BestNode.UndoData()...)
 
 	log.Debugf("Disconnecting block %d.", childHeight)
 
 	// previous best node
-	hB, errx := parentBlock.BlockHeaderBytes()
-	if errx != nil {
-		return fmt.Errorf("unable to serialize block header: %v", errx)
-	}
-	parentIV := stake.CalcHash256PRNGIV(hB)
-
 	var parentStakeNode *stake.Node
 	err = db.StakeDB.View(func(dbTx database.Tx) error {
 		var errLocal error
-		parentStakeNode, errLocal = db.BestNode.DisconnectNode(parentIV, nil, nil, dbTx)
+		parentStakeNode, errLocal = db.BestNode.DisconnectNode(
+			parentBlock.MsgBlock().Header, nil, nil, dbTx)
 		return errLocal
 	})
 	if err != nil {
 		return err
-	}
-	if parentStakeNode == nil {
-		return fmt.Errorf("failed to DisconnectNode at BestNode")
 	}
 	db.BestNode = parentStakeNode
 
@@ -538,32 +334,26 @@ func (db *StakeDatabase) DisconnectBlocks(count int64) error {
 
 // Open attempts to open an existing stake database, and will create a new one
 // if one does not exist.
-func (db *StakeDatabase) Open(dbName string) error {
+func (db *StakeDatabase) Open() error {
 	db.nodeMtx.Lock()
 	defer db.nodeMtx.Unlock()
 
 	// Create a new database to store the accepted stake node data into.
-	var isFreshDB bool
+	dbName := DefaultStakeDbName
 	var err error
 	db.StakeDB, err = database.Open(dbType, dbName, db.params.Net)
 	if err != nil {
 		if strings.Contains(err.Error(), "resource temporarily unavailable") ||
 			strings.Contains(err.Error(), "is being used by another process") {
-			return fmt.Errorf("Stake DB already opened. hxdata running?")
+			return fmt.Errorf("Stake DB already opened. hcexplorer running?")
 		}
-		if strings.Contains(err.Error(), "does not exist") {
-			log.Info("Creating new stake DB.")
-		} else {
-			log.Infof("Unable to open stake DB (%v). Removing and creating new.", err)
-			_ = os.RemoveAll(dbName)
-		}
-
+		log.Infof("Unable to open stake DB (%v). Removing and creating new.", err)
+		_ = os.RemoveAll(dbName)
 		db.StakeDB, err = database.Create(dbType, dbName, db.params.Net)
 		if err != nil {
 			// do not return nil interface, but interface of nil DB
-			return fmt.Errorf("error creating database.DB: %v", err)
+			return fmt.Errorf("error creating db: %v", err)
 		}
-		isFreshDB = true
 	}
 
 	// Load the best block from stake db
@@ -590,15 +380,13 @@ func (db *StakeDatabase) Open(dbName string) error {
 		return errLocal
 	})
 	if err != nil {
-		if !isFreshDB {
-			log.Errorf("Error reading from database (%v).  Reinitializing.", err)
-		}
+		log.Errorf("Error reading from database (%v).  Reinitializing.", err)
 		err = db.StakeDB.Update(func(dbTx database.Tx) error {
 			var errLocal error
 			db.BestNode, errLocal = stake.InitDatabaseState(dbTx, db.params)
 			return errLocal
 		})
-		log.Debug("Initialized new stake db.")
+		log.Debug("Created new stake db.")
 	} else {
 		log.Debug("Opened existing stake db.")
 	}
@@ -606,66 +394,16 @@ func (db *StakeDatabase) Open(dbName string) error {
 	return err
 }
 
-// Close will close the ticket pool and stake databases.
-func (db *StakeDatabase) Close() error {
-	db.nodeMtx.Lock()
-	defer db.nodeMtx.Unlock()
-	err1 := db.PoolDB.Close()
-	err2 := db.StakeDB.Close()
-	if err1 == nil {
-		return err2
-	}
-	if err2 == nil {
-		return err1
-	}
-	return fmt.Errorf("%v + %v", err1, err2)
-}
-
-func (db *StakeDatabase) expires() ([]chainhash.Hash, []bool) {
-	// revoked includes expired ticket and missed votes that were revoked
-	revoked := db.BestNode.RevokedTickets()
-	// unrevoked includes expired and missed that have not been revoked
-	unrevoked := db.BestNode.MissedTickets()
-
-	var expires []chainhash.Hash
-	var spent []bool
-	for _, tkt := range revoked {
-		if db.BestNode.ExistsExpiredTicket(*tkt) {
-			expires = append(expires, *tkt)
-			spent = append(spent, true)
-		}
-	}
-	for _, tkt := range unrevoked {
-		if db.BestNode.ExistsExpiredTicket(tkt) {
-			expires = append(expires, tkt)
-			spent = append(spent, false)
-		}
-	}
-	return expires, spent
-}
-
 // PoolInfoBest computes ticket pool value using the database and, if needed, the
 // node RPC client to fetch ticket values that are not cached. Returned are a
 // structure including ticket pool value, size, and average value.
-func (db *StakeDatabase) PoolInfoBest() *apitypes.TicketPoolInfo {
+func (db *StakeDatabase) PoolInfoBest() (apitypes.TicketPoolInfo, uint32) {
 	db.nodeMtx.RLock()
-	if db.BestNode == nil {
-		db.nodeMtx.RUnlock()
-		log.Errorf("PoolInfoBest: BestNode is nil!")
-		return nil
-	}
-	//poolSize := db.BestNode.PoolSize()
+	poolSize := db.BestNode.PoolSize()
 	liveTickets := db.BestNode.LiveTickets()
-	winningTickets := db.BestNode.Winners()
 	height := db.BestNode.Height()
-	// expiredTickets, expireRevoked := db.expires()
 	db.nodeMtx.RUnlock()
 
-	return db.calcPoolInfo(liveTickets, winningTickets, height)
-}
-
-func (db *StakeDatabase) calcPoolInfo(liveTickets, winningTickets []chainhash.Hash, height uint32) *apitypes.TicketPoolInfo {
-	poolSize := len(liveTickets)
 	db.liveTicketMtx.Lock()
 	var poolValue int64
 	for _, hash := range liveTickets {
@@ -685,24 +423,23 @@ func (db *StakeDatabase) calcPoolInfo(liveTickets, winningTickets []chainhash.Ha
 	}
 	db.liveTicketMtx.Unlock()
 
-	poolCoin := hxutil.Amount(poolValue).ToCoin()
+	// header, _ := db.DBTipBlockHeader()
+	// if int(header.PoolSize) != len(liveTickets) {
+	// 	log.Infof("Header at %d, DB at %d.", header.Height, db.BestNode.Height())
+	// 	log.Warnf("Inconsistent pool sizes: %d, %d", header.PoolSize, len(liveTickets))
+	// }
+
+	poolCoin := hcutil.Amount(poolValue).ToCoin()
 	valAvg := 0.0
 	if len(liveTickets) > 0 {
 		valAvg = poolCoin / float64(poolSize)
 	}
 
-	winners := make([]string, 0, len(winningTickets))
-	for _, winner := range winningTickets {
-		winners = append(winners, winner.String())
-	}
-
-	return &apitypes.TicketPoolInfo{
-		Height:  height,
-		Size:    uint32(poolSize),
-		Value:   poolCoin,
-		ValAvg:  valAvg,
-		Winners: winners,
-	}
+	return apitypes.TicketPoolInfo{
+		Size:   uint32(poolSize),
+		Value:  poolCoin,
+		ValAvg: valAvg,
+	}, height
 }
 
 // PoolInfo attempts to fetch the ticket pool info for the specified block hash
@@ -714,23 +451,7 @@ func (db *StakeDatabase) PoolInfo(hash chainhash.Hash) (*apitypes.TicketPoolInfo
 
 // PoolSize returns the ticket pool size in the best node of the stake database
 func (db *StakeDatabase) PoolSize() int {
-	db.nodeMtx.Lock()
-	defer db.nodeMtx.Unlock()
 	return db.BestNode.PoolSize()
-}
-
-// PoolAtHeight gets the entire list of live tickets at the given chain height.
-func (db *StakeDatabase) PoolAtHeight(height int64) ([]chainhash.Hash, error) {
-	return db.PoolDB.Pool(height)
-}
-
-// PoolAtHash gets the entire list of live tickets at the given block hash.
-func (db *StakeDatabase) PoolAtHash(hash chainhash.Hash) ([]chainhash.Hash, error) {
-	header, err := db.NodeClient.GetBlockHeader(&hash)
-	if err != nil {
-		return nil, fmt.Errorf("GetBlockHeader failed: %v", err)
-	}
-	return db.PoolDB.Pool(int64(header.Height))
 }
 
 // DBState queries the stake database for the best block height and hash.
@@ -788,10 +509,10 @@ func (db *StakeDatabase) DBPrevBlockHeader() (*wire.BlockHeader, error) {
 	return db.NodeClient.GetBlockHeader(&parentHeader.PrevBlock)
 }
 
-// DBTipBlock gets the hxutil.Block for the current best block in the stake
+// DBTipBlock gets the hcutil.Block for the current best block in the stake
 // database. It used DBState to get the best block hash, and the node RPC client
 // to get the block itself.
-func (db *StakeDatabase) DBTipBlock() (*hxutil.Block, error) {
+func (db *StakeDatabase) DBTipBlock() (*hcutil.Block, error) {
 	_, hash, err := db.DBState()
 	if err != nil {
 		return nil, err
@@ -800,10 +521,10 @@ func (db *StakeDatabase) DBTipBlock() (*hxutil.Block, error) {
 	return db.getBlock(hash)
 }
 
-// DBPrevBlock gets the hxutil.Block for the previous best block in the stake
+// DBPrevBlock gets the hcutil.Block for the previous best block in the stake
 // database. It used DBState to get the best block hash, and the node RPC client
 // to get the block itself.
-func (db *StakeDatabase) DBPrevBlock() (*hxutil.Block, error) {
+func (db *StakeDatabase) DBPrevBlock() (*hcutil.Block, error) {
 	_, hash, err := db.DBState()
 	if err != nil {
 		return nil, err
@@ -818,7 +539,7 @@ func (db *StakeDatabase) DBPrevBlock() (*hxutil.Block, error) {
 }
 
 // dbPrevBlock is the non-thread-safe version of DBPrevBlock.
-func (db *StakeDatabase) dbPrevBlock() (*hxutil.Block, error) {
+func (db *StakeDatabase) dbPrevBlock() (*hcutil.Block, error) {
 	_, hash, err := db.dbState()
 	if err != nil {
 		return nil, err
@@ -832,10 +553,10 @@ func (db *StakeDatabase) dbPrevBlock() (*hxutil.Block, error) {
 	return db.getBlock(&parentHeader.PrevBlock)
 }
 
-func (db *StakeDatabase) getBlock(hash *chainhash.Hash) (*hxutil.Block, error) {
+func (db *StakeDatabase) getBlock(hash *chainhash.Hash) (*hcutil.Block, error) {
 	msgBlock, err := db.NodeClient.GetBlock(hash)
 	if err == nil {
-		return hxutil.NewBlock(msgBlock), nil
+		return hcutil.NewBlock(msgBlock), nil
 	}
 	return nil, err
 }

@@ -5,33 +5,12 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/coolsnady/hxd/wire"
-	"github.com/coolsnady/Explorer/txhelpers"
+	"github.com/coolsnady/hcexplorer/txhelpers"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
 )
-
-// DevSubsidyAddress returns the development subsidy address for the specified
-// network.
-func DevSubsidyAddress(params *chaincfg.Params) (string, error) {
-	var devSubsidyAddress string
-	var err error
-	switch params.Name {
-	case "testnet2":
-		// TestNet2 uses an invalid organization PkScript
-		devSubsidyAddress = "TccTkqj8wFqrUemmHMRSx8SYEueQYLmuuFk"
-	default:
-		_, devSubsidyAddresses, _, err0 := txscript.ExtractPkScriptAddrs(
-			params.OrganizationPkScriptVersion, params.OrganizationPkScript, params)
-		if err0 != nil || len(devSubsidyAddresses) != 1 {
-			err = fmt.Errorf("failed to decode dev subsidy address: %v", err0)
-		} else {
-			devSubsidyAddress = devSubsidyAddresses[0].String()
-		}
-	}
-	return devSubsidyAddress, err
-}
 
 // ExtractBlockTransactions extracts transaction information from a
 // wire.MsgBlock and returns the processed information in slices of the dbtypes

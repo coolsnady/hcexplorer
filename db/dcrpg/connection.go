@@ -1,4 +1,4 @@
-// Copyright (c) 2017, The hxdata developers
+// Copyright (c) 2017, The hcexplorer developers
 // See LICENSE for details.
 
 package dcrpg

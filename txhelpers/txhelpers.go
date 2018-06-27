@@ -1,14 +1,9 @@
-// Copyright (c) 2018, The Decred developers
-// Copyright (c) 2017, The hxdata developers
-// See LICENSE for details.
-
-// package txhelpers contains helper functions for working with transactions and
+// txhelpers.go contains helper functions for working with transactions and
 // blocks (e.g. checking for a transaction in a block).
 
 package txhelpers
 
 import (
-	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -17,40 +12,28 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/hxjson"
-	"github.com/coolsnady/hxd/hxutil"
-	"github.com/coolsnady/hxd/txscript"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/dcrjson"
+	"github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
 )
 
-var (
-	zeroHash            = chainhash.Hash{}
-	zeroHashStringBytes = []byte(chainhash.Hash{}.String())
-)
-
-// RawTransactionGetter is an interface satisfied by rpcclient.Client, and
-// required by functions that would otherwise require a rpcclient.Client just
+// RawTransactionGetter is an interface satisfied by hcrpcclient.Client, and
+// required by functions that would otherwise require a hcrpcclient.Client just
 // for GetRawTransaction.
 type RawTransactionGetter interface {
-	GetRawTransaction(txHash *chainhash.Hash) (*hxutil.Tx, error)
-}
-
-// VerboseTransactionGetter is an interface satisfied by rpcclient.Client, and
-// required by functions that would otherwise require a rpcclient.Client just
-// for GetRawTransactionVerbose.
-type VerboseTransactionGetter interface {
-	GetRawTransactionVerbose(txHash *chainhash.Hash) (*hxjson.TxRawResult, error)
+	GetRawTransaction(txHash *chainhash.Hash) (*hcutil.Tx, error)
 }
 
 // BlockWatchedTx contains, for a certain block, the transactions for certain
 // watched addresses
 type BlockWatchedTx struct {
 	BlockHeight   int64
-	TxsForAddress map[string][]*hxutil.Tx
+	TxsForAddress map[string][]*hcutil.Tx
 }
 
 // TxAction is what is happening to the transaction (mined or inserted into
@@ -74,9 +57,9 @@ func HashInSlice(h chainhash.Hash, list []chainhash.Hash) bool {
 	return false
 }
 
-// TxhashInSlice searches a slice of *hxutil.Tx for a transaction with the hash
+// TxhashInSlice searches a slice of *hcutil.Tx for a transaction with the hash
 // txHash. If found, it returns the corresponding *Tx, otherwise nil.
-func TxhashInSlice(txs []*hxutil.Tx, txHash *chainhash.Hash) *hxutil.Tx {
+func TxhashInSlice(txs []*hcutil.Tx, txHash *chainhash.Hash) *hcutil.Tx {
 	if len(txs) < 1 {
 		return nil
 	}
@@ -91,7 +74,7 @@ func TxhashInSlice(txs []*hxutil.Tx, txHash *chainhash.Hash) *hxutil.Tx {
 }
 
 // IncludesStakeTx checks if a block contains a stake transaction hash
-func IncludesStakeTx(txHash *chainhash.Hash, block *hxutil.Block) (int, int8) {
+func IncludesStakeTx(txHash *chainhash.Hash, block *hcutil.Block) (int, int8) {
 	blockTxs := block.STransactions()
 
 	if tx := TxhashInSlice(blockTxs, txHash); tx != nil {
@@ -101,162 +84,13 @@ func IncludesStakeTx(txHash *chainhash.Hash, block *hxutil.Block) (int, int8) {
 }
 
 // IncludesTx checks if a block contains a transaction hash
-func IncludesTx(txHash *chainhash.Hash, block *hxutil.Block) (int, int8) {
+func IncludesTx(txHash *chainhash.Hash, block *hcutil.Block) (int, int8) {
 	blockTxs := block.Transactions()
 
 	if tx := TxhashInSlice(blockTxs, txHash); tx != nil {
 		return tx.Index(), tx.Tree()
 	}
 	return -1, -1
-}
-
-// PrevOut contains a transaction input's previous outpoint, the Hash of the
-// spending (following) transaction, and input index in the transaction.
-type PrevOut struct {
-	TxSpending       chainhash.Hash
-	InputIndex       int
-	PreviousOutpoint *wire.OutPoint
-}
-
-// TxWithBlockData contains a MsgTx and the block hash and height in which it
-// was mined and Time it entered MemPool.
-type TxWithBlockData struct {
-	Tx          *wire.MsgTx
-	BlockHeight int64
-	BlockHash   string
-	MemPoolTime int64
-}
-
-// Hash returns the chainhash.Hash of the transaction.
-func (t *TxWithBlockData) Hash() chainhash.Hash {
-	return t.Tx.TxHash()
-}
-
-// Confirmed indicates if the transaction is confirmed (mined).
-func (t *TxWithBlockData) Confirmed() bool {
-	return t.BlockHeight > 0 && len(t.BlockHash) <= chainhash.MaxHashStringSize
-}
-
-// AddressOutpoints collects spendable and spent transactions outpoints paying
-// to a certain address. The transactions referenced by the outpoints are stored
-// for quick access.
-type AddressOutpoints struct {
-	Address   string
-	Outpoints []*wire.OutPoint
-	PrevOuts  []PrevOut
-	TxnsStore map[chainhash.Hash]*TxWithBlockData
-}
-
-// NewAddressOutpoints creates a new AddressOutpoints, initializing the
-// transaction store/cache, and setting the address string.
-func NewAddressOutpoints(address string) *AddressOutpoints {
-	return &AddressOutpoints{
-		Address:   address,
-		TxnsStore: make(map[chainhash.Hash]*TxWithBlockData),
-	}
-}
-
-// Update appends the provided outpoints, and merges the transactions.
-func (a *AddressOutpoints) Update(Txns []*TxWithBlockData,
-	Outpoints []*wire.OutPoint, PrevOutpoint []PrevOut) {
-	// Relevant outpoints
-	a.Outpoints = append(a.Outpoints, Outpoints...)
-
-	// Previous outpoints (inputs)
-	a.PrevOuts = append(a.PrevOuts, PrevOutpoint...)
-
-	// Referenced transactions
-	for _, t := range Txns {
-		a.TxnsStore[t.Hash()] = t
-	}
-}
-
-// Merge concatenates the outpoints of two AddressOutpoints, and merges the
-// transactions.
-func (a *AddressOutpoints) Merge(ao *AddressOutpoints) {
-	// Relevant outpoints
-	a.Outpoints = append(a.Outpoints, ao.Outpoints...)
-
-	// Previous outpoints (inputs)
-	a.PrevOuts = append(a.PrevOuts, ao.PrevOuts...)
-
-	// Referenced transactions
-	for h, t := range ao.TxnsStore {
-		a.TxnsStore[h] = t
-	}
-}
-
-// TxInvolvesAddress checks the inputs and outputs of a transaction for
-// involvement of the given address.
-func TxInvolvesAddress(msgTx *wire.MsgTx, addr string, c VerboseTransactionGetter,
-	params *chaincfg.Params) (outpoints []*wire.OutPoint,
-	prevOuts []PrevOut, prevTxs []*TxWithBlockData) {
-	// The outpoints of this transaction paying to the address
-	outpoints = TxPaysToAddress(msgTx, addr, params)
-	// The inputs of this transaction funded by outpoints of previous
-	// transactions paying to the address.
-	prevOuts, prevTxs = TxConsumesOutpointWithAddress(msgTx, addr, c, params)
-	return
-}
-
-// TxConsumesOutpointWithAddress checks a transaction for inputs that spend an
-// outpoint paying to the given address. Returned are the identified input
-// indexes and the corresponding previous outpoints determined.
-func TxConsumesOutpointWithAddress(msgTx *wire.MsgTx, addr string,
-	c VerboseTransactionGetter, params *chaincfg.Params) (prevOuts []PrevOut, prevTxs []*TxWithBlockData) {
-	// For each TxIn of this transaction, inspect the previous outpoint.
-	for inIdx, txIn := range msgTx.TxIn {
-		// Previous outpoint for this TxIn
-		prevOut := &txIn.PreviousOutPoint
-		if bytes.Equal(zeroHash[:], prevOut.Hash[:]) {
-			continue
-		}
-		// GetRawTransactionVerbose provides the height and hash of the block in
-		// which the transaction is included, if it is confirmed.
-		prevTxRaw, err := c.GetRawTransactionVerbose(&prevOut.Hash)
-		if err != nil {
-			fmt.Printf("Unable to get raw transaction for %s\n", prevOut.Hash.String())
-			continue
-		}
-		prevTx, err := MsgTxFromHex(prevTxRaw.Hex)
-		if err != nil {
-			fmt.Printf("MsgTxFromHex failed: %s\n", err)
-			continue
-		}
-		txHash := prevTx.TxHash()
-
-		// prevOut.Index tells indicates which output
-		txOut := prevTx.TxOut[prevOut.Index]
-		// extract the addresses from this output's PkScript
-		_, txAddrs, _, err := txscript.ExtractPkScriptAddrs(
-			txOut.Version, txOut.PkScript, params)
-		if err != nil {
-			fmt.Printf("ExtractPkScriptAddrs: %v\n", err.Error())
-			continue
-		}
-
-		// For each address that matches the address of interest, record this
-		// previous outpoint and the containing transactions.
-		for _, txAddr := range txAddrs {
-			addrstr := txAddr.EncodeAddress()
-			if addr == addrstr {
-				outpoint := wire.NewOutPoint(&txHash,
-					prevOut.Index, TxTree(prevTx))
-				prevOuts = append(prevOuts, PrevOut{
-					TxSpending:       msgTx.TxHash(),
-					InputIndex:       inIdx,
-					PreviousOutpoint: outpoint,
-				})
-				prevTxs = append(prevTxs, &TxWithBlockData{
-					Tx:          prevTx,
-					BlockHeight: prevTxRaw.BlockHeight,
-					BlockHash:   prevTxRaw.BlockHash,
-				})
-			}
-		}
-
-	}
-	return
 }
 
 // BlockConsumesOutpointWithAddresses checks the specified block to see if it
@@ -266,17 +100,14 @@ func TxConsumesOutpointWithAddress(msgTx *wire.MsgTx, addr string,
 // The RPC client is used to get the PreviousOutPoint for each TxIn of each
 // transaction in the block, from which the address is obtained from the
 // PkScript of that output. chaincfg Params is required to decode the script.
-func BlockConsumesOutpointWithAddresses(block *hxutil.Block, addrs map[string]TxAction,
-	c RawTransactionGetter, params *chaincfg.Params) map[string][]*hxutil.Tx {
-	addrMap := make(map[string][]*hxutil.Tx)
+func BlockConsumesOutpointWithAddresses(block *hcutil.Block, addrs map[string]TxAction,
+	c RawTransactionGetter, params *chaincfg.Params) map[string][]*hcutil.Tx {
+	addrMap := make(map[string][]*hcutil.Tx)
 
-	checkForOutpointAddr := func(blockTxs []*hxutil.Tx) {
+	checkForOutpointAddr := func(blockTxs []*hcutil.Tx) {
 		for _, tx := range blockTxs {
 			for _, txIn := range tx.MsgTx().TxIn {
 				prevOut := &txIn.PreviousOutPoint
-				if bytes.Equal(zeroHash[:], prevOut.Hash[:]) {
-					continue
-				}
 				// For each TxIn, check the indicated vout index in the txid of the
 				// previous outpoint.
 				// txrr, err := c.GetRawTransactionVerbose(&prevOut.Hash)
@@ -299,7 +130,7 @@ func BlockConsumesOutpointWithAddresses(block *hxutil.Block, addrs map[string]Tx
 						addrstr := txAddr.EncodeAddress()
 						if _, ok := addrs[addrstr]; ok {
 							if addrMap[addrstr] == nil {
-								addrMap[addrstr] = make([]*hxutil.Tx, 0)
+								addrMap[addrstr] = make([]*hcutil.Tx, 0)
 							}
 							addrMap[addrstr] = append(addrMap[addrstr], prevTx)
 						}
@@ -315,41 +146,14 @@ func BlockConsumesOutpointWithAddresses(block *hxutil.Block, addrs map[string]Tx
 	return addrMap
 }
 
-// TxPaysToAddress returns a slice of outpoints of a transaction which pay to
-// specified address.
-func TxPaysToAddress(msgTx *wire.MsgTx, addr string,
-	params *chaincfg.Params) (outpoints []*wire.OutPoint) {
-	// Check the addresses associated with the PkScript of each TxOut
-	txTree := TxTree(msgTx)
-	hash := msgTx.TxHash()
-	for outIndex, txOut := range msgTx.TxOut {
-		_, txOutAddrs, _, err := txscript.ExtractPkScriptAddrs(txOut.Version,
-			txOut.PkScript, params)
-		if err != nil {
-			fmt.Printf("ExtractPkScriptAddrs: %v", err.Error())
-			continue
-		}
-
-		// Check if we are watching any address for this TxOut
-		for _, txAddr := range txOutAddrs {
-			addrstr := txAddr.EncodeAddress()
-			if addr == addrstr {
-				outpoints = append(outpoints, wire.NewOutPoint(&hash,
-					uint32(outIndex), txTree))
-			}
-		}
-	}
-	return
-}
-
 // BlockReceivesToAddresses checks a block for transactions paying to the
-// specified addresses, and creates a map of addresses to a slice of hxutil.Tx
+// specified addresses, and creates a map of addresses to a slice of hcutil.Tx
 // involving the address.
-func BlockReceivesToAddresses(block *hxutil.Block, addrs map[string]TxAction,
-	params *chaincfg.Params) map[string][]*hxutil.Tx {
-	addrMap := make(map[string][]*hxutil.Tx)
+func BlockReceivesToAddresses(block *hcutil.Block, addrs map[string]TxAction,
+	params *chaincfg.Params) map[string][]*hcutil.Tx {
+	addrMap := make(map[string][]*hcutil.Tx)
 
-	checkForAddrOut := func(blockTxs []*hxutil.Tx) {
+	checkForAddrOut := func(blockTxs []*hcutil.Tx) {
 		for _, tx := range blockTxs {
 			// Check the addresses associated with the PkScript of each TxOut
 			for _, txOut := range tx.MsgTx().TxOut {
@@ -365,7 +169,7 @@ func BlockReceivesToAddresses(block *hxutil.Block, addrs map[string]TxAction,
 					addrstr := txAddr.EncodeAddress()
 					if _, ok := addrs[addrstr]; ok {
 						if _, gotSlice := addrMap[addrstr]; !gotSlice {
-							addrMap[addrstr] = make([]*hxutil.Tx, 0) // nil
+							addrMap[addrstr] = make([]*hcutil.Tx, 0) // nil
 						}
 						addrMap[addrstr] = append(addrMap[addrstr], tx)
 					}
@@ -427,12 +231,12 @@ func OutPointAddressesFromString(txid string, index uint32, tree int8,
 }
 
 // MedianAmount gets the median Amount from a slice of Amounts
-func MedianAmount(s []hxutil.Amount) hxutil.Amount {
+func MedianAmount(s []hcutil.Amount) hcutil.Amount {
 	if len(s) == 0 {
 		return 0
 	}
 
-	sort.Sort(hxutil.AmountSorter(s))
+	sort.Sort(hcutil.AmountSorter(s))
 
 	middle := len(s) / 2
 
@@ -444,7 +248,7 @@ func MedianAmount(s []hxutil.Amount) hxutil.Amount {
 	return (s[middle] + s[middle-1]) / 2
 }
 
-// MedianCoin gets the median HXD from a slice of float64s
+// MedianCoin gets the median DCR from a slice of float64s
 func MedianCoin(s []float64) float64 {
 	if len(s) == 0 {
 		return 0
@@ -483,7 +287,7 @@ func GetDifficultyRatio(bits uint32, params *chaincfg.Params) float64 {
 }
 
 // SSTXInBlock gets a slice containing all of the SSTX mined in a block
-func SSTXInBlock(block *hxutil.Block) []*hxutil.Tx {
+func SSTXInBlock(block *hcutil.Block) []*hcutil.Tx {
 	_, txns := TicketTxnsInBlock(block)
 	return txns
 }
@@ -493,29 +297,32 @@ func SSTXInBlock(block *hxutil.Block) []*hxutil.Tx {
 // votes. The error return may be ignored if the input transaction is known to
 // be a valid ssgen (vote), otherwise it should be checked.
 func SSGenVoteBlockValid(msgTx *wire.MsgTx) (BlockValidation, uint16, error) {
-	if !stake.IsSSGen(msgTx) {
+	if isVote, _ := stake.IsSSGen(msgTx); !isVote {
 		return BlockValidation{}, 0, fmt.Errorf("not a vote transaction")
 	}
-
 	ssGenVoteBits := stake.SSGenVoteBits(msgTx)
-	blockHash, blockHeight := stake.SSGenBlockVotedOn(msgTx)
+
+	blockHash, blockHeight, err := stake.SSGenBlockVotedOn(msgTx)
+	if err != nil {
+		return BlockValidation{}, 0, err
+	}
 	blockValid := BlockValidation{
 		Hash:     blockHash,
 		Height:   int64(blockHeight),
-		Validity: hxutil.IsFlagSet16(ssGenVoteBits, hxutil.BlockValid),
+		Validity: hcutil.IsFlagSet16(ssGenVoteBits, hcutil.BlockValid),
 	}
 	return blockValid, ssGenVoteBits, nil
 }
 
 // VoteBitsInBlock returns a list of vote bits for the votes in a block
-func VoteBitsInBlock(block *hxutil.Block) []stake.VoteVersionTuple {
-	var voteBits []stake.VoteVersionTuple
+func VoteBitsInBlock(block *hcutil.Block) []blockchain.VoteVersionTuple {
+	var voteBits []blockchain.VoteVersionTuple
 	for _, stx := range block.MsgBlock().STransactions {
-		if !stake.IsSSGen(stx) {
+		if isVote, _ := stake.IsSSGen(stx); !isVote {
 			continue
 		}
 
-		voteBits = append(voteBits, stake.VoteVersionTuple{
+		voteBits = append(voteBits, blockchain.VoteVersionTuple{
 			Version: stake.SSGenVersion(stx),
 			Bits:    stake.SSGenVoteBits(stx),
 		})
@@ -578,7 +385,6 @@ type VoteChoice struct {
 	Choice *chaincfg.Choice `json:"choice"`
 }
 
-// VoteVersion extracts the vote version from the input pubkey script.
 func VoteVersion(pkScript []byte) uint32 {
 	if len(pkScript) < 8 {
 		return stake.VoteConsensusVersionAbsent
@@ -628,8 +434,8 @@ func SSGenVoteChoices(tx *wire.MsgTx, params *chaincfg.Params) (BlockValidation,
 
 // FeeInfoBlock computes ticket fee statistics for the tickets included in the
 // specified block.
-func FeeInfoBlock(block *hxutil.Block) *hxjson.FeeInfoBlock {
-	feeInfo := new(hxjson.FeeInfoBlock)
+func FeeInfoBlock(block *hcutil.Block) *dcrjson.FeeInfoBlock {
+	feeInfo := new(dcrjson.FeeInfoBlock)
 	_, sstxMsgTxns := TicketsInBlock(block)
 
 	feeInfo.Height = uint32(block.Height())
@@ -647,7 +453,7 @@ func FeeInfoBlock(block *hxutil.Block) *hxjson.FeeInfoBlock {
 		for iv := range msgTx.TxOut {
 			amtOut += msgTx.TxOut[iv].Value
 		}
-		fee := hxutil.Amount(amtIn - amtOut).ToCoin()
+		fee := hcutil.Amount(amtIn - amtOut).ToCoin()
 		if fee < minFee {
 			minFee = fee
 		}
@@ -681,8 +487,8 @@ func FeeInfoBlock(block *hxutil.Block) *hxjson.FeeInfoBlock {
 
 // FeeRateInfoBlock computes ticket fee rate statistics for the tickets included
 // in the specified block.
-func FeeRateInfoBlock(block *hxutil.Block) *hxjson.FeeInfoBlock {
-	feeInfo := new(hxjson.FeeInfoBlock)
+func FeeRateInfoBlock(block *hcutil.Block) *dcrjson.FeeInfoBlock {
+	feeInfo := new(dcrjson.FeeInfoBlock)
 	_, sstxMsgTxns := TicketsInBlock(block)
 
 	feeInfo.Height = uint32(block.Height())
@@ -699,7 +505,7 @@ func FeeRateInfoBlock(block *hxutil.Block) *hxjson.FeeInfoBlock {
 		for iv := range msgTx.TxOut {
 			amtOut += msgTx.TxOut[iv].Value
 		}
-		fee := hxutil.Amount(1000*(amtIn-amtOut)).ToCoin() / float64(msgTx.SerializeSize())
+		fee := hcutil.Amount(1000*(amtIn-amtOut)).ToCoin() / float64(msgTx.SerializeSize())
 		if fee < minFee {
 			minFee = fee
 		}
@@ -732,16 +538,16 @@ func FeeRateInfoBlock(block *hxutil.Block) *hxjson.FeeInfoBlock {
 }
 
 // MsgTxFromHex returns a wire.MsgTx struct built from the transaction hex string
-func MsgTxFromHex(txhex string) (*wire.MsgTx, error) {
+func MsgTxFromHex(txhex string) *wire.MsgTx {
 	txBytes, err := hex.DecodeString(txhex)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 	msgTx := wire.NewMsgTx()
 	if err = msgTx.FromBytes(txBytes); err != nil {
-		return nil, err
+		return nil
 	}
-	return msgTx, nil
+	return msgTx
 }
 
 // DetermineTxTypeString returns a string representing the transaction type given
@@ -773,17 +579,8 @@ func IsStakeTx(msgTx *wire.MsgTx) bool {
 	}
 }
 
-// TxTree returns for a wire.MsgTx either wire.TxTreeStake or wire.TxTreeRegular
-// depending on the type of transaction.
-func TxTree(msgTx *wire.MsgTx) int8 {
-	if IsStakeTx(msgTx) {
-		return wire.TxTreeStake
-	}
-	return wire.TxTreeRegular
-}
-
 // TxFee computes and returns the fee for a given tx
-func TxFee(msgTx *wire.MsgTx) hxutil.Amount {
+func TxFee(msgTx *wire.MsgTx) hcutil.Amount {
 	var amtIn int64
 	for iv := range msgTx.TxIn {
 		amtIn += msgTx.TxIn[iv].ValueIn
@@ -792,11 +589,11 @@ func TxFee(msgTx *wire.MsgTx) hxutil.Amount {
 	for iv := range msgTx.TxOut {
 		amtOut += msgTx.TxOut[iv].Value
 	}
-	return hxutil.Amount(amtIn - amtOut)
+	return hcutil.Amount(amtIn - amtOut)
 }
 
-// TxFeeRate computes and returns the fee rate in HXD/KB for a given tx
-func TxFeeRate(msgTx *wire.MsgTx) (hxutil.Amount, hxutil.Amount) {
+// TxFeeRate computes and returns the fee rate in DCR/KB for a given tx
+func TxFeeRate(msgTx *wire.MsgTx) (hcutil.Amount, hcutil.Amount) {
 	var amtIn int64
 	for iv := range msgTx.TxIn {
 		amtIn += msgTx.TxIn[iv].ValueIn
@@ -805,23 +602,14 @@ func TxFeeRate(msgTx *wire.MsgTx) (hxutil.Amount, hxutil.Amount) {
 	for iv := range msgTx.TxOut {
 		amtOut += msgTx.TxOut[iv].Value
 	}
-	return hxutil.Amount(amtIn - amtOut), hxutil.Amount(1000 * (amtIn - amtOut) / int64(msgTx.SerializeSize()))
+	return hcutil.Amount(amtIn - amtOut), hcutil.Amount(1000 * (amtIn - amtOut) / int64(msgTx.SerializeSize()))
 }
 
-// TotalOutFromMsgTx computes the total value out of a MsgTx
-func TotalOutFromMsgTx(msgTx *wire.MsgTx) hxutil.Amount {
-	var amtOut int64
-	for _, v := range msgTx.TxOut {
-		amtOut += v.Value
-	}
-	return hxutil.Amount(amtOut)
-}
-
-// TotalVout computes the total value of a slice of hxjson.Vout
-func TotalVout(vouts []hxjson.Vout) hxutil.Amount {
-	var total hxutil.Amount
+// TotalVout computes the total value of a slice of dcrjson.Vout
+func TotalVout(vouts []dcrjson.Vout) hcutil.Amount {
+	var total hcutil.Amount
 	for _, v := range vouts {
-		a, err := hxutil.NewAmount(v.Value)
+		a, err := hcutil.NewAmount(v.Value)
 		if err != nil {
 			continue
 		}

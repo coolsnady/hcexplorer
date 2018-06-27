@@ -9,18 +9,18 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/hxjson"
-	"github.com/coolsnady/hxd/hxutil"
-	"github.com/coolsnady/hxd/rpcclient"
-	"github.com/coolsnady/Explorer/semver"
+	"github.com/coolsnady/hcexplorer/semver"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/dcrjson"
+	"github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcrpcclient"
 )
 
 type TxGetter struct {
-	txLookup map[chainhash.Hash]*hxutil.Tx
+	txLookup map[chainhash.Hash]*hcutil.Tx
 }
 
-func (t TxGetter) GetRawTransaction(txHash *chainhash.Hash) (*hxutil.Tx, error) {
+func (t TxGetter) GetRawTransaction(txHash *chainhash.Hash) (*hcutil.Tx, error) {
 	tx, ok := t.txLookup[*txHash]
 	var err error
 	if !ok {
@@ -29,7 +29,7 @@ func (t TxGetter) GetRawTransaction(txHash *chainhash.Hash) (*hxutil.Tx, error) 
 	return tx, err
 }
 
-func LoadTestBlockAndSSTX(t *testing.T) (*hxutil.Block, []*hxutil.Tx) {
+func LoadTestBlockAndSSTX(t *testing.T) (*hcutil.Block, []*hcutil.Tx) {
 	// Load block data
 	blockTestFileName := "block138883.bin"
 	blockTestFile, err := os.Open(blockTestFileName)
@@ -37,7 +37,7 @@ func LoadTestBlockAndSSTX(t *testing.T) (*hxutil.Block, []*hxutil.Tx) {
 		t.Fatalf("Unable to open file %s: %v", blockTestFileName, err)
 	}
 	defer blockTestFile.Close()
-	block, err := hxutil.NewBlockFromReader(blockTestFile)
+	block, err := hcutil.NewBlockFromReader(blockTestFile)
 	if err != nil {
 		t.Fatalf("Unable to load test block data.")
 	}
@@ -56,14 +56,14 @@ func LoadTestBlockAndSSTX(t *testing.T) (*hxutil.Block, []*hxutil.Tx) {
 		t.Fatalf("Unable to read file %s: %v", blockTestSSTXFileName, err)
 	}
 
-	allTxRead := make([]*hxutil.Tx, numSSTX)
+	allTxRead := make([]*hcutil.Tx, numSSTX)
 	for i := range allTxRead {
 		var txSize int64
 		if err = binary.Read(txFile, binary.LittleEndian, &txSize); err != nil {
 			t.Fatalf("Unable to read file %s: %v", blockTestSSTXFileName, err)
 		}
 
-		allTxRead[i], err = hxutil.NewTxFromReader(txFile)
+		allTxRead[i], err = hcutil.NewTxFromReader(txFile)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -92,7 +92,7 @@ func TestFeeRateInfoBlock(t *testing.T) {
 	fib := FeeRateInfoBlock(block)
 	t.Log(*fib)
 
-	fibExpected := hxjson.FeeInfoBlock{
+	fibExpected := dcrjson.FeeInfoBlock{
 		Height: 138883,
 		Number: 20,
 		Min:    0.5786178114478114,
@@ -113,7 +113,7 @@ func TestFeeInfoBlock(t *testing.T) {
 	fib := FeeInfoBlock(block)
 	t.Log(*fib)
 
-	fibExpected := hxjson.FeeInfoBlock{
+	fibExpected := dcrjson.FeeInfoBlock{
 		Height: 138883,
 		Number: 20,
 		Min:    0.17184949,
@@ -130,7 +130,7 @@ func TestFeeInfoBlock(t *testing.T) {
 
 // Utilities for creating test data:
 
-func TxToWriter(tx *hxutil.Tx, w io.Writer) error {
+func TxToWriter(tx *hcutil.Tx, w io.Writer) error {
 	msgTx := tx.MsgTx()
 	binary.Write(w, binary.LittleEndian, int64(msgTx.SerializeSize()))
 	msgTx.Serialize(w)
@@ -139,9 +139,9 @@ func TxToWriter(tx *hxutil.Tx, w io.Writer) error {
 	return nil
 }
 
-// ConnectNodeRPC attempts to create a new websocket connection to a hxd node,
+// ConnectNodeRPC attempts to create a new websocket connection to a hcd node,
 // with the given credentials and optional notification handlers.
-func ConnectNodeRPC(host, user, pass, cert string, disableTLS bool) (*rpcclient.Client, semver.Semver, error) {
+func ConnectNodeRPC(host, user, pass, cert string, disableTLS bool) (*hcrpcclient.Client, semver.Semver, error) {
 	var dcrdCerts []byte
 	var err error
 	var nodeVer semver.Semver
@@ -153,7 +153,7 @@ func ConnectNodeRPC(host, user, pass, cert string, disableTLS bool) (*rpcclient.
 
 	}
 
-	connCfgDaemon := &rpcclient.ConnConfig{
+	connCfgDaemon := &hcrpcclient.ConnConfig{
 		Host:         host,
 		Endpoint:     "ws", // websocket
 		User:         user,
@@ -162,9 +162,9 @@ func ConnectNodeRPC(host, user, pass, cert string, disableTLS bool) (*rpcclient.
 		DisableTLS:   disableTLS,
 	}
 
-	dcrdClient, err := rpcclient.New(connCfgDaemon, nil)
+	dcrdClient, err := hcrpcclient.New(connCfgDaemon, nil)
 	if err != nil {
-		return nil, nodeVer, fmt.Errorf("Failed to start hxd RPC client: %s", err.Error())
+		return nil, nodeVer, fmt.Errorf("Failed to start hcd RPC client: %s", err.Error())
 	}
 
 	// Ensure the RPC server has a compatible API version.
@@ -173,7 +173,7 @@ func ConnectNodeRPC(host, user, pass, cert string, disableTLS bool) (*rpcclient.
 		return nil, nodeVer, fmt.Errorf("unable to get node RPC version")
 	}
 
-	dcrdVer := ver["hxdjsonrpcapi"]
+	dcrdVer := ver["dcrdjsonrpcapi"]
 	nodeVer = semver.NewSemver(dcrdVer.Major, dcrdVer.Minor, dcrdVer.Patch)
 
 	return dcrdClient, nodeVer, nil

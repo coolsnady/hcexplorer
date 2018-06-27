@@ -7,18 +7,16 @@ import (
 	"runtime/pprof"
 	"sync"
 
-	"github.com/coolsnady/hxd/rpcclient"
-	"github.com/coolsnady/Explorer/db/dcrsqlite"
-	"github.com/coolsnady/Explorer/rpcutils"
-	"github.com/coolsnady/Explorer/stakedb"
-	"github.com/decred/slog"
+	"github.com/btcsuite/btclog"
+	"github.com/coolsnady/hcexplorer/db/dcrsqlite"
+	"github.com/coolsnady/hcexplorer/rpcutils"
+	"github.com/coolsnady/hcrpcclient"
 )
 
 var (
-	backendLog      *slog.Backend
-	rpcclientLogger slog.Logger
-	sqliteLogger    slog.Logger
-	stakedbLogger   slog.Logger
+	backendLog      *btclog.Backend
+	rpcclientLogger btclog.Logger
+	sqliteLogger    btclog.Logger
 )
 
 func init() {
@@ -27,20 +25,18 @@ func init() {
 		fmt.Printf("Unable to start logger: %v", err)
 		os.Exit(1)
 	}
-	backendLog = slog.NewBackend(log.Writer())
+	backendLog = btclog.NewBackend(log.Writer())
 	rpcclientLogger = backendLog.Logger("RPC")
-	rpcclient.UseLogger(rpcclientLogger)
+	hcrpcclient.UseLogger(rpcclientLogger)
 	sqliteLogger = backendLog.Logger("DSQL")
 	dcrsqlite.UseLogger(rpcclientLogger)
-	stakedbLogger = backendLog.Logger("SKDB")
-	stakedb.UseLogger(stakedbLogger)
 }
 
 func mainCore() int {
 	// Parse the configuration file, and setup logger.
 	cfg, err := loadConfig()
 	if err != nil {
-		fmt.Printf("Failed to load hxdata config: %s\n", err.Error())
+		fmt.Printf("Failed to load hcexplorer config: %s\n", err.Error())
 		return 1
 	}
 
@@ -55,8 +51,8 @@ func mainCore() int {
 	}
 
 	// Connect to node RPC server
-	client, _, err := rpcutils.ConnectNodeRPC(cfg.HxdServ, cfg.HxdUser,
-		cfg.HxdPass, cfg.HxdCert, cfg.DisableDaemonTLS)
+	client, _, err := rpcutils.ConnectNodeRPC(cfg.DcrdServ, cfg.DcrdUser,
+		cfg.DcrdPass, cfg.DcrdCert, cfg.DisableDaemonTLS)
 	if err != nil {
 		log.Fatalf("Unable to connect to RPC server: %v", err)
 		return 1
@@ -78,8 +74,7 @@ func mainCore() int {
 	// Sqlite output
 	dbInfo := dcrsqlite.DBInfo{FileName: cfg.DBFileName}
 	//sqliteDB, err := dcrsqlite.InitDB(&dbInfo)
-	sqliteDB, cleanupDB, err := dcrsqlite.InitWiredDB(&dbInfo, nil, client,
-		activeChain, "rebuild_data")
+	sqliteDB, cleanupDB, err := dcrsqlite.InitWiredDB(&dbInfo, nil, client, activeChain)
 	defer cleanupDB()
 	if err != nil {
 		log.Errorf("Unable to initialize SQLite database: %v", err)
@@ -108,7 +103,7 @@ func mainCore() int {
 	waitSync.Add(1)
 	//go sqliteDB.SyncDB(&waitSync, quit)
 	var height int64
-	height, err = sqliteDB.SyncDB(&waitSync, quit, nil, 0)
+	height, err = sqliteDB.SyncDBWithPoolValue(&waitSync, quit)
 	if err != nil {
 		log.Error(err)
 	}

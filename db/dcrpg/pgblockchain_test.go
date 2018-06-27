@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/wire"
 )
 
 var (
@@ -20,9 +20,9 @@ func openDB() (func() error, error) {
 	dbi := DBInfo{
 		Host:   "localhost",
 		Port:   "5432",
-		User:   "hxdata",
-		Pass:   "hxdata",
-		DBName: "hxdata",
+		User:   "hcexplorer",
+		Pass:   "hcexplorer",
+		DBName: "hcexplorer",
 	}
 	var err error
 	db, err = NewChainDB(&dbi, &chaincfg.MainNetParams)
@@ -30,7 +30,11 @@ func openDB() (func() error, error) {
 	if db != nil {
 		cleanUp = db.Close
 	}
-	return cleanUp, err
+	if err != nil {
+		return cleanUp, err
+	}
+
+	return cleanUp, db.SetupTables()
 }
 
 func TestMain(m *testing.M) {

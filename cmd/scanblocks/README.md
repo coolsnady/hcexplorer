@@ -1,20 +1,20 @@
 # scanblocks
 
 This is a command line utility that scans the entire blockchain, up to the best
-block syncd by hxd, to extract basic data from each block.
+block syncd by hcd, to extract basic data from each block.
 
 ## Usage
 
 You just need to specify the user, password, host:port, and (optionally) the RPC
-TLS certificate if using a TLS connection to hxd.
+TLS certificate if using a TLS connection to hcd.
 
 ```sh
-./scanblocks -user hxduser -pass hxdpass
+./scanblocks -user dcrduser -pass dcrdpass
 ```
 
 The argument `-notls` is true by default, but if you set it to false, it is
-required to specify the RPC cert for hxd with `-cert`.  I strongly suggest to
-run hxd with `--notls` when using `scanblocks` for performance reasons.
+required to specify the RPC cert for hcd with `-cert`.  I strongly suggest to
+run hcd with `--notls` when using `scanblocks` for performance reasons.
 
 There is no config file. Options must be specified on the command line.
 

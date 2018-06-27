@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	flags "github.com/btcsuite/go-flags"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/hxutil"
-	"github.com/coolsnady/hxwallet/netparams"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcwallet/netparams"
 )
 
 const (
@@ -25,18 +25,18 @@ var activeNet = &netparams.MainNetParams
 var activeChain = &chaincfg.MainNetParams
 
 var (
-	hxdHomeDir = hxutil.AppDataDir("hxd", false)
-	//rebuilddbHomeDir            = hxutil.AppDataDir("rebuilddb", false)
-	defaultDaemonRPCCertFile = filepath.Join(hxdHomeDir, "rpc.cert")
+	dcrdHomeDir = hcutil.AppDataDir("hcd", false)
+	//rebuilddbHomeDir            = hcutil.AppDataDir("rebuilddb", false)
+	defaultDaemonRPCCertFile = filepath.Join(dcrdHomeDir, "rpc.cert")
 	defaultConfigFile        = filepath.Join(curDir, defaultConfigFilename)
 	defaultLogDir            = filepath.Join(curDir, defaultLogDirname)
 	defaultHost              = "localhost"
 
 	defaultDBHostPort  = "127.0.0.1:3600"
-	defaultDBUser      = "hxdata"
+	defaultDBUser      = "hcexplorer"
 	defaultDBPass      = "bananas"
-	defaultDBTableName = "hxdata"
-	defaultDBFileName  = "hxdata.sqlt.db"
+	defaultDBTableName = "hcexplorer"
+	defaultDBFileName  = "hcexplorer.sqlt.db"
 )
 
 type config struct {
@@ -58,10 +58,10 @@ type config struct {
 	DBTable    string `long:"dbtable" description:"DB table name"`
 
 	// RPC client options
-	HxdUser         string `long:"hxduser" description:"Daemon RPC user name"`
-	HxdPass         string `long:"hxdpass" description:"Daemon RPC password"`
-	HxdServ         string `long:"hxdserv" description:"Hostname/IP and port of hxd RPC server to connect to (default localhost:9109, testnet: localhost:19109, simnet: localhost:19556)"`
-	HxdCert         string `long:"hxdcert" description:"File containing the hxd certificate file"`
+	DcrdUser         string `long:"dcrduser" description:"Daemon RPC user name"`
+	DcrdPass         string `long:"dcrdpass" description:"Daemon RPC password"`
+	DcrdServ         string `long:"dcrdserv" description:"Hostname/IP and port of hcd RPC server to connect to (default localhost:9109, testnet: localhost:19109, simnet: localhost:19556)"`
+	DcrdCert         string `long:"dcrdcert" description:"File containing the hcd certificate file"`
 	DisableDaemonTLS bool   `long:"nodaemontls" description:"Disable TLS for the daemon RPC client -- NOTE: This is only allowed if the RPC client is connecting to localhost"`
 
 	// TODO
@@ -80,7 +80,7 @@ var (
 		DBUser:     defaultDBUser,
 		DBPass:     defaultDBPass,
 		DBTable:    defaultDBTableName,
-		HxdCert:   defaultDaemonRPCCertFile,
+		DcrdCert:   defaultDaemonRPCCertFile,
 	}
 )
 
@@ -89,7 +89,7 @@ var (
 func cleanAndExpandPath(path string) string {
 	// Expand initial ~ to OS specific home directory.
 	if strings.HasPrefix(path, "~") {
-		homeDir := filepath.Dir(hxdHomeDir)
+		homeDir := filepath.Dir(dcrdHomeDir)
 		path = strings.Replace(path, "~", homeDir, 1)
 	}
 
@@ -199,8 +199,8 @@ func loadConfig() (*config, error) {
 
 	// Set the host names and ports to the default if the
 	// user does not specify them.
-	if cfg.HxdServ == "" {
-		cfg.HxdServ = defaultHost + ":" + activeNet.JSONRPCClientPort
+	if cfg.DcrdServ == "" {
+		cfg.DcrdServ = defaultHost + ":" + activeNet.JSONRPCClientPort
 	}
 
 	// Append the network type to the log directory so it is "namespaced"
@@ -233,17 +233,17 @@ func loadConfig() (*config, error) {
 }
 
 // const (
-//     defaultDBTableName = "hxdata"
-//     defaultDBUserName = "hxdata"
+//     defaultDBTableName = "hcexplorer"
+//     defaultDBUserName = "hcexplorer"
 //     defaultDBPass = "dcrpassword"
-//     defaultDBFileName = "hxdata.sqlt.dat"
+//     defaultDBFileName = "hcexplorer.sqlt.dat"
 //     defaultDBHostPort = "127.0.0.1:3660"
 // )
 
 // type configuration struct {
 //     DaemonHostPort string `json:"dcrdhost"`
-//     DaemonUser string `json:"hxduser"`
-//     DaemonPass string `json:"hxdpass"`
+//     DaemonUser string `json:"dcrduser"`
+//     DaemonPass string `json:"dcrdpass"`
 // 	DBHostPort     string `json:"dbhost"`
 //     DBUser     string `json:"dbuser"`
 //     DBPass     string `json:"dbpass"`

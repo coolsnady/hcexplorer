@@ -14,13 +14,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/hxjson"
-	"github.com/coolsnady/hxd/hxutil"
-	"github.com/coolsnady/hxd/rpcclient"
-	apitypes "github.com/coolsnady/Explorer/api/types"
+	apitypes "github.com/coolsnady/hcexplorer/dcrdataapi"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/dcrjson"
+	"github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcrpcclient"
 )
 
 // NewTx models data for a new transaction
@@ -110,7 +110,7 @@ func (tix ByAbsoluteFee) Less(i, j int) bool {
 // mechanism used by main. The newTxChan contains a chain hash for the
 // transaction from the notificiation, or a zero value hash indicating it was
 // from a Ticker or manually triggered.
-func (p *mempoolMonitor) TxHandler(client *rpcclient.Client) {
+func (p *mempoolMonitor) TxHandler(client *hcrpcclient.Client) {
 	defer p.wg.Done()
 	for {
 		select {
@@ -129,7 +129,7 @@ func (p *mempoolMonitor) TxHandler(client *rpcclient.Client) {
 			// OnTxAccepted probably sent on newTxChan
 			tx, err := client.GetRawTransaction(s.Hash)
 			if err != nil {
-				log.Errorf("Failed to get transaction (do you have --txindex with hxd?) %v: %v",
+				log.Errorf("Failed to get transaction (do you have --txindex with hcd?) %v: %v",
 					s.Hash.String(), err)
 				continue
 			}
@@ -137,8 +137,8 @@ func (p *mempoolMonitor) TxHandler(client *rpcclient.Client) {
 			// See if the transaction is a ticket purchase.  If not, just
 			// make a note of it and go back to the loop.
 			txType := stake.DetermineTxType(tx.MsgTx())
-			//s.Tree() == hxutil.TxTreeRegular
-			// See hxd/blockchain/stake/staketx.go for information about
+			//s.Tree() == hcutil.TxTreeRegular
+			// See hcd/blockchain/stake/staketx.go for information about
 			// specifications for different transaction types.
 
 			switch txType {
@@ -150,12 +150,12 @@ func (p *mempoolMonitor) TxHandler(client *rpcclient.Client) {
 				// Ticket purchase
 				price := tx.MsgTx().TxOut[0].Value
 				log.Tracef("Received ticket purchase %v, price %v",
-					tx.Hash(), hxutil.Amount(price).ToCoin())
+					tx.Hash(), hcutil.Amount(price).ToCoin())
 				// txHeight = tx.MsgTx().TxIn[0].BlockHeight // uh, no
 			case stake.TxTypeSSGen:
 				// Vote
-				ticketHash := &tx.MsgTx().TxIn[1].PreviousOutPoint.Hash
-				log.Tracef("Received vote %v for ticket %v", tx.Hash(), ticketHash)
+				voteHash := &tx.MsgTx().TxIn[1].PreviousOutPoint.Hash
+				log.Tracef("Received vote %v for ticket %v", tx.Hash(), voteHash)
 				// TODO: Show subsidy for this vote (Vout[2] - Vin[1] ?)
 				continue
 			case stake.TxTypeSSRtx:
@@ -284,9 +284,8 @@ type Stakelimitfeeinfo struct {
 type MempoolData struct {
 	Height            uint32
 	NumTickets        uint32
-	NumVotes          uint32
 	NewTickets        uint32
-	Ticketfees        *hxjson.TicketFeeInfoResult
+	Ticketfees        *dcrjson.TicketFeeInfoResult
 	MinableFees       *MinableFeeInfo
 	AllTicketsDetails TicketsDetails
 }
@@ -296,19 +295,19 @@ func (m *MempoolData) GetHeight() uint32 {
 	return m.Height
 }
 
-// GetNumTickets returns number of tickets
+// GetNumTickets returns the mempool height and number of tickets
 func (m *MempoolData) GetNumTickets() uint32 {
 	return m.NumTickets
 }
 
 type mempoolDataCollector struct {
 	mtx          sync.Mutex
-	dcrdChainSvr *rpcclient.Client
+	dcrdChainSvr *hcrpcclient.Client
 	activeChain  *chaincfg.Params
 }
 
 // NewMempoolDataCollector creates a new mempoolDataCollector.
-func NewMempoolDataCollector(dcrdChainSvr *rpcclient.Client, params *chaincfg.Params) *mempoolDataCollector {
+func NewMempoolDataCollector(dcrdChainSvr *hcrpcclient.Client, params *chaincfg.Params) *mempoolDataCollector {
 	return &mempoolDataCollector{
 		mtx:          sync.Mutex{},
 		dcrdChainSvr: dcrdChainSvr,
@@ -319,7 +318,7 @@ func NewMempoolDataCollector(dcrdChainSvr *rpcclient.Client, params *chaincfg.Pa
 // Collect is the main handler for collecting chain data
 func (t *mempoolDataCollector) Collect() (*MempoolData, error) {
 	// In case of a very fast block, make sure previous call to collect is not
-	// still running, or hxd may be mad.
+	// still running, or hcd may be mad.
 	t.mtx.Lock()
 	defer t.mtx.Unlock()
 
@@ -334,16 +333,10 @@ func (t *mempoolDataCollector) Collect() (*MempoolData, error) {
 
 	// Get a map of ticket hashes to getrawmempool results
 	// mempoolTickets[ticketHashes[0].String()].Fee
-	mempoolTickets, err := c.GetRawMempoolVerbose(hxjson.GRMTickets)
+	mempoolTickets, err := c.GetRawMempoolVerbose(dcrjson.GRMTickets)
 	if err != nil {
 		return nil, err
 	}
-
-	mempoolVotes, err := c.GetRawMempoolVerbose(hxjson.GRMVotes)
-	if err != nil {
-		return nil, err
-	}
-	numVotes := len(mempoolVotes)
 
 	// Fee info
 	var numFeeWindows, numFeeBlocks uint32 = 0, 0
@@ -357,7 +350,7 @@ func (t *mempoolDataCollector) Collect() (*MempoolData, error) {
 	allTicketsDetails := make(TicketsDetails, 0, N)
 	for hash, t := range mempoolTickets {
 		//ageSec := time.Since(time.Unix(t.Time, 0)).Seconds()
-		// Compute fee in HXD / kB
+		// Compute fee in DCR / kB
 		feeRate := t.Fee / float64(t.Size) * 1000
 		allTicketsDetails = append(allTicketsDetails, &apitypes.TicketDetails{
 			Hash:    hash,
@@ -431,7 +424,6 @@ func (t *mempoolDataCollector) Collect() (*MempoolData, error) {
 		NumTickets:        feeInfo.FeeInfoMempool.Number,
 		Ticketfees:        feeInfo,
 		MinableFees:       mineables,
-		NumVotes:          uint32(numVotes),
 		AllTicketsDetails: allTicketsDetails,
 	}
 

@@ -8,27 +8,27 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/coolsnady/hxd/blockchain"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/hxutil"
-	"github.com/coolsnady/hxd/rpcclient"
-	apitypes "github.com/coolsnady/Explorer/api/types"
-	"github.com/coolsnady/Explorer/rpcutils"
-	"github.com/coolsnady/Explorer/txhelpers"
-	"github.com/decred/slog"
+	"github.com/btcsuite/btclog"
+	apitypes "github.com/coolsnady/hcexplorer/dcrdataapi"
+	"github.com/coolsnady/hcexplorer/rpcutils"
+	"github.com/coolsnady/hcexplorer/txhelpers"
+	"github.com/coolsnady/hcd/blockchain"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcrpcclient"
 )
 
 var host = flag.String("host", "127.0.0.1:9109", "node RPC host:port")
-var user = flag.String("user", "hxd", "node RPC username")
+var user = flag.String("user", "hcd", "node RPC username")
 var pass = flag.String("pass", "bananas", "node RPC password")
-var cert = flag.String("cert", "hxd.cert", "node RPC TLS certificate (when notls=false)")
+var cert = flag.String("cert", "hcd.cert", "node RPC TLS certificate (when notls=false)")
 var notls = flag.Bool("notls", true, "Disable use of TLS for node connection")
 
 var (
 	activeNetParams = &chaincfg.MainNetParams
 
-	backendLog      *slog.Backend
-	rpcclientLogger slog.Logger
+	backendLog      *btclog.Backend
+	rpcclientLogger btclog.Logger
 )
 
 func mainCore() int {
@@ -59,7 +59,7 @@ func mainCore() int {
 	}
 
 	blockSummaries := make([]apitypes.BlockDataBasic, height+1)
-	blocks := make(map[int64]*hxutil.Block)
+	blocks := make(map[int64]*hcutil.Block)
 
 	for i := int64(0); i < height+1; i++ {
 		blockhash, err := client.GetBlockHash(i)
@@ -73,7 +73,7 @@ func mainCore() int {
 			log.Errorf("GetBlock failed (%s): %v", blockhash, err)
 			return 4
 		}
-		blocks[i] = hxutil.NewBlock(msgBlock)
+		blocks[i] = hcutil.NewBlock(msgBlock)
 
 		// info, err := client.GetInfo()
 		// if err != nil {
@@ -93,7 +93,7 @@ func mainCore() int {
 			Size:       header.Size,
 			Hash:       blockhash.String(),
 			Difficulty: diffRatio,
-			StakeDiff:  hxutil.Amount(header.SBits).ToCoin(),
+			StakeDiff:  hcutil.Amount(header.SBits).ToCoin(),
 			Time:       header.Timestamp.Unix(),
 			PoolInfo: apitypes.TicketPoolInfo{
 				Size: header.PoolSize,
@@ -114,7 +114,7 @@ func mainCore() int {
 
 	log.Info("Extracting pool values...")
 	for i := range blockSummaries {
-		blockSummaries[i].PoolInfo.Value = hxutil.Amount(poolValues[i]).ToCoin()
+		blockSummaries[i].PoolInfo.Value = hcutil.Amount(poolValues[i]).ToCoin()
 		if blockSummaries[i].PoolInfo.Size > 0 {
 			blockSummaries[i].PoolInfo.ValAvg = blockSummaries[i].PoolInfo.Value / float64(blockSummaries[i].PoolInfo.Size)
 		} else {
@@ -151,9 +151,9 @@ func init() {
 		os.Exit(1)
 	}
 
-	backendLog = slog.NewBackend(log.Writer())
+	backendLog = btclog.NewBackend(log.Writer())
 	rpcclientLogger = backendLog.Logger("RPC")
-	rpcclient.UseLogger(rpcclientLogger)
+	hcrpcclient.UseLogger(rpcclientLogger)
 	rpcutils.UseLogger(rpcclientLogger)
 }
 

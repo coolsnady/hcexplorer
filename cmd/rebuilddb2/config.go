@@ -1,7 +1,3 @@
-// Copyright (c) 2018, The Decred developers
-// Copyright (c) 2017, The hxdata developers
-// See LICENSE for details.
-
 package main
 
 import (
@@ -9,13 +5,12 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 
 	flags "github.com/btcsuite/go-flags"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/hxutil"
-	"github.com/coolsnady/hxwallet/netparams"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcwallet/netparams"
 )
 
 const (
@@ -30,17 +25,17 @@ var activeNet = &netparams.MainNetParams
 var activeChain = &chaincfg.MainNetParams
 
 var (
-	hxdHomeDir = hxutil.AppDataDir("hxd", false)
-	//rebuilddbHomeDir            = hxutil.AppDataDir("rebuilddb", false)
-	defaultDaemonRPCCertFile = filepath.Join(hxdHomeDir, "rpc.cert")
+	dcrdHomeDir = hcutil.AppDataDir("hcd", false)
+	//rebuilddbHomeDir            = hcutil.AppDataDir("rebuilddb", false)
+	defaultDaemonRPCCertFile = filepath.Join(dcrdHomeDir, "rpc.cert")
 	defaultConfigFile        = filepath.Join(curDir, defaultConfigFilename)
 	defaultLogDir            = filepath.Join(curDir, defaultLogDirname)
 	defaultHost              = "localhost"
 
 	defaultDBHostPort = "127.0.0.1:5432"
-	defaultDBUser     = "hxdata"
+	defaultDBUser     = "hcexplorer"
 	defaultDBPass     = ""
-	defaultDBName     = "hxdata"
+	defaultDBName     = "hcexplorer"
 )
 
 type config struct {
@@ -52,27 +47,28 @@ type config struct {
 	DebugLevel  string `short:"d" long:"debuglevel" description:"Logging level {trace, debug, info, warn, error, critical}"`
 	Quiet       bool   `short:"q" long:"quiet" description:"Easy way to set debuglevel to error"`
 	LogDir      string `long:"logdir" description:"Directory to log output"`
-	HTTPProfile bool   `long:"httpprof" short:"p" description:"Start HTTP profiler."`
 	CPUProfile  string `long:"cpuprofile" description:"File for CPU profiling."`
-	MemProfile  string `long:"memprofile" description:"File for mempry profiling."`
 
 	// DB
-	DBHostPort             string `long:"dbhost" description:"DB host"`
-	DBUser                 string `long:"dbuser" description:"DB user"`
-	DBPass                 string `long:"dbpass" description:"DB pass"`
-	DBName                 string `long:"dbname" description:"DB name"`
-	DuplicateEntryRecovery bool   `short:"r" long:"recoverfromdups" description:"Remove duplicate entries from all tables which would be prevented by the unique indexes. May be necessary to recover from an ill-timed crash."`
-	DropDBTables           bool   `short:"D" long:"droptables" description:"Drop/delete DB tables."`
-	ForceReindex           bool   `long:"reindex" short:"R" description:"Drop indexes prior to sync and recreate after sync, with insertion conflict checks disabled in absence of constraints."`
-	AddrSpendInfoOnline    bool   `short:"a" long:"addrspends-no-batch" description:"Continually update the address table spending transaction info during rebuild (instead of full table update at end).  SLOW if doing full rebuild!"`
-	TicketSpendInfoBatch   bool   `short:"T" long:"ticketspends-batch" description:"Batch update the tickets table spending transaction info after rebuild (instead of during the rebuild)."`
+	DBHostPort          string `long:"dbhost" description:"DB host"`
+	DBUser              string `long:"dbuser" description:"DB user"`
+	DBPass              string `long:"dbpass" description:"DB pass"`
+	DBName              string `long:"dbname" description:"DB name"`
+	DropDBTables        bool   `short:"D" long:"droptables" description:"Drop/delete DB tables."`
+	UpdateAddrSpendInfo bool   `short:"u" long:"updateaddrspends" description:"Update the spending transaction info in ALL rows of the addresses table."`
 
 	// RPC client options
-	HxdUser         string `long:"hxduser" description:"Daemon RPC user name"`
-	HxdPass         string `long:"hxdpass" description:"Daemon RPC password"`
-	HxdServ         string `long:"hxdserv" description:"Hostname/IP and port of hxd RPC server to connect to (default localhost:9109, testnet: localhost:19109, simnet: localhost:19556)"`
-	HxdCert         string `long:"hxdcert" description:"File containing the hxd certificate file"`
+	DcrdUser         string `long:"dcrduser" description:"Daemon RPC user name"`
+	DcrdPass         string `long:"dcrdpass" description:"Daemon RPC password"`
+	DcrdServ         string `long:"dcrdserv" description:"Hostname/IP and port of hcd RPC server to connect to (default localhost:9109, testnet: localhost:19109, simnet: localhost:19556)"`
+	DcrdCert         string `long:"dcrdcert" description:"File containing the hcd certificate file"`
 	DisableDaemonTLS bool   `long:"nodaemontls" description:"Disable TLS for the daemon RPC client -- NOTE: This is only allowed if the RPC client is connecting to localhost"`
+
+	ForceReindex bool `long:"reindex" short:"R" description:"Drop indexes prior to sync and recreate after sync, with insertion conflict checks disabled in absence of constraints."`
+	// TODO
+	//AccountName   string `long:"accountname" description:"Account name (other than default or imported) for which balances should be listed."`
+	//TicketAddress string `long:"ticketaddress" description:"Address to which you have given voting rights"`
+	//PoolAddress   string `long:"pooladdress" description:"Address to which you have given rights to pool fees"`
 }
 
 var (
@@ -84,7 +80,7 @@ var (
 		DBUser:     defaultDBUser,
 		DBPass:     defaultDBPass,
 		DBName:     defaultDBName,
-		HxdCert:   defaultDaemonRPCCertFile,
+		DcrdCert:   defaultDaemonRPCCertFile,
 	}
 )
 
@@ -93,7 +89,7 @@ var (
 func cleanAndExpandPath(path string) string {
 	// Expand initial ~ to OS specific home directory.
 	if strings.HasPrefix(path, "~") {
-		homeDir := filepath.Dir(hxdHomeDir)
+		homeDir := filepath.Dir(dcrdHomeDir)
 		path = strings.Replace(path, "~", homeDir, 1)
 	}
 
@@ -139,13 +135,12 @@ func loadConfig() (*config, error) {
 	}
 
 	// Show the version and exit if the version flag was specified.
-	appName := filepath.Base(os.Args[0])
-	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
-	if preCfg.ShowVersion {
-		fmt.Printf("%s version %s (Go version %s, %s-%s)\n", appName,
-			ver.String(), runtime.Version(), runtime.GOOS, runtime.GOARCH)
-		os.Exit(0)
-	}
+	// appName := filepath.Base(os.Args[0])
+	// appName = strings.TrimSuffix(appName, filepath.Ext(appName))
+	// if preCfg.ShowVersion {
+	// 	fmt.Println(appName, "version", ver.String())
+	// 	os.Exit(0)
+	// }
 
 	// Load additional config from file.
 	var configFileError error
@@ -204,8 +199,8 @@ func loadConfig() (*config, error) {
 
 	// Set the host names and ports to the default if the
 	// user does not specify them.
-	if cfg.HxdServ == "" {
-		cfg.HxdServ = defaultHost + ":" + activeNet.JSONRPCClientPort
+	if cfg.DcrdServ == "" {
+		cfg.DcrdServ = defaultHost + ":" + activeNet.JSONRPCClientPort
 	}
 
 	// Append the network type to the log directory so it is "namespaced"

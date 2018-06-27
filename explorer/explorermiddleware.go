@@ -1,10 +1,11 @@
-// Copyright (c) 2017, The hxdata developers
+// Copyright (c) 2017, The hcexplorer developers
 // See LICENSE for details.
-
 package explorer
 
 import (
+	"bytes"
 	"context"
+	"html/template"
 	"net/http"
 	"strconv"
 
@@ -21,7 +22,17 @@ const (
 	ctxAddress
 )
 
-func (exp *explorerUI) BlockHashPathOrIndexCtx(next http.Handler) http.Handler {
+// searchPathCtx returns a http.HandlerFunc that embeds the value at the url part
+// {search} into the request context
+func searchPathCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		str := chi.URLParam(r, "search")
+		ctx := context.WithValue(r.Context(), ctxSearch, str)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (exp *explorerUI) blockHashPathOrIndexCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		height, err := strconv.ParseInt(chi.URLParam(r, "blockhash"), 10, 0)
 		var hash string
@@ -30,14 +41,14 @@ func (exp *explorerUI) BlockHashPathOrIndexCtx(next http.Handler) http.Handler {
 			height, err = exp.blockData.GetBlockHeight(hash)
 			if err != nil {
 				log.Errorf("GetBlockHeight(%s) failed: %v", hash, err)
-				exp.ErrorPage(w, "Something went wrong...", "could not find that block", true)
+				http.NotFound(w, r)
 				return
 			}
 		} else {
 			hash, err = exp.blockData.GetBlockHash(height)
 			if err != nil {
 				log.Errorf("GetBlockHeight(%d) failed: %v", height, err)
-				exp.ErrorPage(w, "Something went wrong...", "could not find that block", true)
+				http.NotFound(w, r)
 				return
 			}
 		}
@@ -76,8 +87,7 @@ func getTxIDCtx(r *http.Request) string {
 	return hash
 }
 
-// TransactionHashCtx embeds "txid" into the request context
-func TransactionHashCtx(next http.Handler) http.Handler {
+func transactionHashCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		txid := chi.URLParam(r, "txid")
 		ctx := context.WithValue(r.Context(), ctxTxHash, txid)
@@ -85,8 +95,18 @@ func TransactionHashCtx(next http.Handler) http.Handler {
 	})
 }
 
-// AddressPathCtx embeds "address" into the request context
-func AddressPathCtx(next http.Handler) http.Handler {
+// templateExecToString executes the input template with given name using the
+// supplied data, and writes the result into a string. If the template fails to
+// execute, a non-nil error will be returned. Check it before writing to the
+// client, otherwise you might as well execute directly into your response
+// writer instead of the internal buffer of this function.
+func templateExecToString(t *template.Template, name string, data interface{}) (string, error) {
+	var page bytes.Buffer
+	err := t.ExecuteTemplate(&page, name, data)
+	return page.String(), err
+}
+
+func addressPathCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		address := chi.URLParam(r, "address")
 		ctx := context.WithValue(r.Context(), ctxAddress, address)

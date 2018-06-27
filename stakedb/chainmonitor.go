@@ -1,4 +1,3 @@
-// Copyright (c) 2018, The Decred developers
 // Copyright (c) 2017, Jonathan Chappelow
 // See LICENSE for details.
 
@@ -8,8 +7,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/hxutil"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcutil"
 )
 
 // ReorgData contains the information from a reoranization notification
@@ -18,7 +17,6 @@ type ReorgData struct {
 	OldChainHeight int32
 	NewChainHead   chainhash.Hash
 	NewChainHeight int32
-	WG             *sync.WaitGroup
 }
 
 // ChainMonitor connects blocks to the stake DB as they come in.
@@ -33,7 +31,7 @@ type ChainMonitor struct {
 	DoneConnecting chan struct{}
 
 	// reorg handling
-	sync.Mutex
+	reorgLock    sync.Mutex
 	reorgData    *ReorgData
 	sideChain    []chainhash.Hash
 	reorganizing bool
@@ -75,12 +73,11 @@ out:
 	keepon:
 		select {
 		case hash, ok := <-p.blockChan:
-			p.Lock()
-			release := func() { p.Unlock() }
+			release := func() {}
 			select {
 			case <-p.ConnectingLock:
 				// send on unbuffered channel
-				release = func() { p.Unlock(); p.DoneConnecting <- struct{}{} }
+				release = func() { p.DoneConnecting <- struct{}{} }
 			default:
 			}
 
@@ -91,7 +88,9 @@ out:
 			}
 
 			// If reorganizing, the block will first go to a side chain
+			p.reorgLock.Lock()
 			reorg, reorgData := p.reorganizing, p.reorgData
+			p.reorgLock.Unlock()
 
 			if reorg {
 				p.sideChain = append(p.sideChain, *hash)
@@ -118,22 +117,23 @@ out:
 
 				// Reorg is complete
 				p.sideChain = nil
+				p.reorgLock.Lock()
 				p.reorganizing = false
+				p.reorgLock.Unlock()
+				release()
 				log.Infof("Reorganization to block %v (height %d) complete",
 					p.reorgData.NewChainHead, p.reorgData.NewChainHeight)
 			} else {
 				// Extend main chain
 				block, err := p.db.ConnectBlockHash(hash)
+				release()
 				if err != nil {
-					release()
 					log.Error(err)
 					break keepon
 				}
 
 				log.Infof("Connected block %d to stake DB.", block.Height())
 			}
-
-			release()
 
 		case _, ok := <-p.quit:
 			if !ok {
@@ -158,13 +158,13 @@ func (p *ChainMonitor) switchToSideChain() (int32, *chainhash.Hash, error) {
 	if err != nil {
 		return 0, nil, fmt.Errorf("unable to get block at root of side chain")
 	}
-	block := hxutil.NewBlock(msgBlock)
+	block := hcutil.NewBlock(msgBlock)
 
 	prevMsgBlock, err := p.db.NodeClient.GetBlock(&msgBlock.Header.PrevBlock)
 	if err != nil {
 		return 0, nil, fmt.Errorf("unable to get common ancestor on side chain")
 	}
-	prevBlock := hxutil.NewBlock(prevMsgBlock)
+	prevBlock := hcutil.NewBlock(prevMsgBlock)
 
 	commonAncestorHeight := block.Height() - 1
 	if prevBlock.Height() != commonAncestorHeight {
@@ -216,9 +216,7 @@ out:
 	keepon:
 		select {
 		case reorgData, ok := <-p.reorgChan:
-			p.Lock()
 			if !ok {
-				p.Unlock()
 				log.Warnf("Reorg channel closed.")
 				break out
 			}
@@ -226,24 +224,23 @@ out:
 			newHeight, oldHeight := reorgData.NewChainHeight, reorgData.OldChainHeight
 			newHash, oldHash := reorgData.NewChainHead, reorgData.OldChainHead
 
+			p.reorgLock.Lock()
 			if p.reorganizing {
+				p.reorgLock.Unlock()
 				log.Errorf("Reorg notified for chain tip %v (height %v), but already "+
 					"processing a reorg to block %v", newHash, newHeight,
 					p.reorgData.NewChainHead)
-				p.Unlock()
 				break keepon
 			}
 
 			p.reorganizing = true
 			p.reorgData = reorgData
-			p.Unlock()
+			p.reorgLock.Unlock()
 
 			log.Infof("Reorganize started. NEW head block %v at height %d.",
 				newHash, newHeight)
 			log.Infof("Reorganize started. OLD head block %v at height %d.",
 				oldHash, oldHeight)
-
-			reorgData.WG.Done()
 
 		case _, ok := <-p.quit:
 			if !ok {

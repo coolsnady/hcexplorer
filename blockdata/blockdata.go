@@ -8,30 +8,29 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/hxjson"
-	"github.com/coolsnady/hxd/hxutil"
-	"github.com/coolsnady/hxd/rpcclient"
-	"github.com/coolsnady/hxd/wire"
-	apitypes "github.com/coolsnady/Explorer/api/types"
-	"github.com/coolsnady/Explorer/stakedb"
-	"github.com/coolsnady/Explorer/txhelpers"
+	apitypes "github.com/coolsnady/hcexplorer/dcrdataapi"
+	"github.com/coolsnady/hcexplorer/stakedb"
+	"github.com/coolsnady/hcexplorer/txhelpers"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/dcrjson"
+	"github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcrpcclient"
+	"github.com/coolsnady/hcd/wire"
 )
 
 // BlockData contains all the data collected by a Collector and stored
 // by a BlockDataSaver. TODO: consider if pointers are desirable here.
 type BlockData struct {
-	Header           hxjson.GetBlockHeaderVerboseResult
+	Header           dcrjson.GetBlockHeaderVerboseResult
 	Connections      int32
-	FeeInfo          hxjson.FeeInfoBlock
-	CurrentStakeDiff hxjson.GetStakeDifficultyResult
-	EstStakeDiff     hxjson.EstimateStakeDiffResult
+	FeeInfo          dcrjson.FeeInfoBlock
+	CurrentStakeDiff dcrjson.GetStakeDifficultyResult
+	EstStakeDiff     dcrjson.EstimateStakeDiffResult
 	PoolInfo         apitypes.TicketPoolInfo
 	ExtraInfo        apitypes.BlockExplorerExtraInfo
 	PriceWindowNum   int
 	IdxBlockInWindow int
-	WinningTickets   []string
 }
 
 // ToStakeInfoExtended returns an apitypes.StakeInfoExtended object from the
@@ -76,8 +75,6 @@ func (b *BlockData) ToBlockSummary() apitypes.BlockDataBasic {
 		PoolInfo:   b.PoolInfo,
 	}
 }
-
-// ToBlockExplorerSummary returns a BlockExplorerBasic
 func (b *BlockData) ToBlockExplorerSummary() apitypes.BlockExplorerBasic {
 	t := time.Unix(b.Header.Time, 0)
 	ftime := t.Format("2006-01-02 15:04:05")
@@ -98,13 +95,13 @@ func (b *BlockData) ToBlockExplorerSummary() apitypes.BlockExplorerBasic {
 // Collector models a structure for the source of the blockdata
 type Collector struct {
 	mtx          sync.Mutex
-	dcrdChainSvr *rpcclient.Client
+	dcrdChainSvr *hcrpcclient.Client
 	netParams    *chaincfg.Params
 	stakeDB      *stakedb.StakeDatabase
 }
 
 // NewCollector creates a new Collector.
-func NewCollector(dcrdChainSvr *rpcclient.Client, params *chaincfg.Params,
+func NewCollector(dcrdChainSvr *hcrpcclient.Client, params *chaincfg.Params,
 	stakeDB *stakedb.StakeDatabase) *Collector {
 	return &Collector{
 		mtx:          sync.Mutex{},
@@ -140,14 +137,14 @@ func (t *Collector) CollectAPITypes(hash *chainhash.Hash) (*apitypes.BlockDataBa
 // the block data required by Collect() that is specific to the block with the
 // given hash.
 func (t *Collector) CollectBlockInfo(hash *chainhash.Hash) (*apitypes.BlockDataBasic,
-	*hxjson.FeeInfoBlock, *hxjson.GetBlockHeaderVerboseResult,
+	*dcrjson.FeeInfoBlock, *dcrjson.GetBlockHeaderVerboseResult,
 	*apitypes.BlockExplorerExtraInfo, *wire.MsgBlock, error) {
 	msgBlock, err := t.dcrdChainSvr.GetBlock(hash)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}
 	height := msgBlock.Header.Height
-	block := hxutil.NewBlock(msgBlock)
+	block := hcutil.NewBlock(msgBlock)
 	txLen := len(block.Transactions())
 	coinSupply, err := t.dcrdChainSvr.GetCoinSupply()
 	if err != nil {
@@ -162,12 +159,12 @@ func (t *Collector) CollectBlockInfo(hash *chainhash.Hash) (*apitypes.BlockDataB
 	var found bool
 	if ticketPoolInfo, found = t.stakeDB.PoolInfo(*hash); !found {
 		log.Infof("Unable to find block (%s) in pool info cache, trying best block.", hash.String())
-		ticketPoolInfo = t.stakeDB.PoolInfoBest()
-		if ticketPoolInfo.Height != height {
-			log.Warnf("Collected block height %d != stake db height %d. Pool "+
-				"info will not match the rest of this block's data.",
-				height, ticketPoolInfo.Height)
+		tpi, sdbHeight := t.stakeDB.PoolInfoBest()
+		if sdbHeight != height {
+			log.Warnf("Collected block height %d != stake db height %d. Pool info "+
+				"will not match the rest of this block's data.", height, sdbHeight)
 		}
+		ticketPoolInfo = &tpi
 	}
 
 	// Fee info
@@ -179,7 +176,7 @@ func (t *Collector) CollectBlockInfo(hash *chainhash.Hash) (*apitypes.BlockDataB
 	// Work/Stake difficulty
 	header := block.MsgBlock().Header
 	diff := txhelpers.GetDifficultyRatio(header.Bits, t.netParams)
-	sdiff := hxutil.Amount(header.SBits).ToCoin()
+	sdiff := hcutil.Amount(header.SBits).ToCoin()
 
 	blockHeaderResults, err := t.dcrdChainSvr.GetBlockHeaderVerbose(hash)
 	if err != nil {
@@ -207,7 +204,7 @@ func (t *Collector) CollectBlockInfo(hash *chainhash.Hash) (*apitypes.BlockDataB
 // CollectHash collects chain data at the block with the specified hash.
 func (t *Collector) CollectHash(hash *chainhash.Hash) (*BlockData, *wire.MsgBlock, error) {
 	// In case of a very fast block, make sure previous call to collect is not
-	// still running, or hxd may be mad.
+	// still running, or hcd may be mad.
 	t.mtx.Lock()
 	defer t.mtx.Unlock()
 
@@ -235,8 +232,8 @@ func (t *Collector) CollectHash(hash *chainhash.Hash) (*BlockData, *wire.MsgBloc
 		Header:           *blockHeaderVerbose,
 		Connections:      int32(numConn),
 		FeeInfo:          *feeInfoBlock,
-		CurrentStakeDiff: hxjson.GetStakeDifficultyResult{CurrentStakeDifficulty: blockDataBasic.StakeDiff},
-		EstStakeDiff:     hxjson.EstimateStakeDiffResult{},
+		CurrentStakeDiff: dcrjson.GetStakeDifficultyResult{CurrentStakeDifficulty: blockDataBasic.StakeDiff},
+		EstStakeDiff:     dcrjson.EstimateStakeDiffResult{},
 		PoolInfo:         blockDataBasic.PoolInfo,
 		ExtraInfo:        *extra,
 		PriceWindowNum:   int(height / winSize),
@@ -249,7 +246,7 @@ func (t *Collector) CollectHash(hash *chainhash.Hash) (*BlockData, *wire.MsgBloc
 // Collect collects chain data at the current best block.
 func (t *Collector) Collect() (*BlockData, *wire.MsgBlock, error) {
 	// In case of a very fast block, make sure previous call to collect is not
-	// still running, or hxd may be mad.
+	// still running, or hcd may be mad.
 	t.mtx.Lock()
 	defer t.mtx.Unlock()
 
@@ -275,7 +272,7 @@ func (t *Collector) Collect() (*BlockData, *wire.MsgBlock, error) {
 	select {
 	case bbs = <-toch:
 	case <-time.After(time.Second * 10):
-		log.Errorf("Timeout waiting for hxd.")
+		log.Errorf("Timeout waiting for hcd.")
 		return nil, nil, errors.New("Timeout")
 	}
 
@@ -289,7 +286,7 @@ func (t *Collector) Collect() (*BlockData, *wire.MsgBlock, error) {
 	estStakeDiff, err := t.dcrdChainSvr.EstimateStakeDiff(nil)
 	if err != nil {
 		log.Warn("estimatestakediff is broken: ", err)
-		estStakeDiff = &hxjson.EstimateStakeDiffResult{}
+		estStakeDiff = &dcrjson.EstimateStakeDiffResult{}
 	}
 
 	// Info specific to the block hash

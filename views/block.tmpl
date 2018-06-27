@@ -1,11 +1,12 @@
 {{define "block"}}
 <!DOCTYPE html>
+{{with .Data}}
 <html lang="en">
-{{template "html-head" printf "Decred Block %d" .Data.Height}}
+{{template "html-head" printf "Decred Block %d" .Height}}
 <body>
-    {{ template "navbar" . }}
+    {{template "navbar"}}
     <div class="container">
-    {{with .Data}}
+
         <div class="row justify-content-between">
             <div class="col-md-7 col-sm-6">
                 <h4 class="mb-2">
@@ -21,7 +22,7 @@
                 <table>
                     <tr class="h2rem">
                         <td class="pr-2 lh1rem vam text-right xs-w117 w120">TOTAL SENT</td>
-                        <td class="fs28 mono fs16-decimal d-flex align-items-center">{{template "decimalParts" (float64AsDecimalParts .TotalSent false)}}<span class="pl-1 unit">HXD</span></td>
+                        <td class="fs28 mono fs16-decimal d-flex align-items-center">{{template "decimalParts" (float64AsDecimalParts .TotalSent false)}}<span class="pl-1 unit">DCR</span></td>
                     </tr>
                 </table>
             </div>
@@ -37,23 +38,23 @@
                         </td>
                     </tr>
                     <tr>
-                        <td class="text-right pr-2 lh1rem vam nowrap"><a data-keynav-priority href="/block/{{.PreviousHash}}">PREV BLOCK</a></td>
+                        <td class="text-right pr-2 lh1rem vam nowrap"><a href="/explorer/block/{{.PreviousHash}}">PREV BLOCK</a></td>
                         <td>
-                            <span class="hash break-word lh1rem">{{.PreviousHash}}</span>
+                            <span class="hash break-word lh1rem"  href="/explorer/block/{{.PreviousHash}}">{{.PreviousHash}}</span>
                         </td>
                     </tr>
                     {{if .NextHash}}
                     <tr>
-                        <td class="text-right pr-2 lh1rem vam nowrap"><a data-preserve-keynav-index="true" href="/block/{{.NextHash}}">NEXT BLOCK</a></td>
+                        <td class="text-right pr-2 lh1rem vam nowrap"><a href="/explorer/block/{{.NextHash}}">NEXT BLOCK</a></td>
                         <td>
                             <span class="hash break-word lh1rem">{{.NextHash}}</span>
                         </td>
                     </tr>
                     {{else}}
                     <tr>
-                        <td class="text-right pr-2 lh1rem vam nowrap"><a href="/mempool">NEXT BLOCK</a></td>
+                        <td class="text-right pr-2 lh1rem vam nowrap">NEXT BLOCK</td>
                         <td>
-                            <span class="lh1rem">mempool</span>
+                            <span class="lh1rem">&mdash;</span>
                         </td>
                     </tr>
                     {{end}}
@@ -101,27 +102,27 @@
                         <td class="mono" title="{{intComma .Size}} Bytes">{{.FormattedBytes}}</td>
                     </tr>
                     <tr>
-                        <td class="text-right pr-2 lh1rem p03rem0 xs-w117"><a href="#votes" data-keynav-skip>VOTES</a></td>
+                        <td class="text-right pr-2 lh1rem p03rem0 xs-w117"><a href="#votes">VOTES</a></td>
                         <td class="lh1rem">
                             {{.Voters}}
                         </td>
                     </tr>
                     <tr>
                         <td class="text-right pr-2 lh1rem p03rem0 xs-w117">
-                            {{if gt .FreshStake  0 }}<a href="#tickets" data-keynav-skip>TICKETS</a>{{else}}TICKETS{{end}}
+                            {{if gt .FreshStake  0 }}<a href="#tickets">TICKETS</a>{{else}}TICKETS{{end}}
                         </td>
                         <td class="lh1rem">
                             {{.FreshStake}}
                         </td>
                     </tr>
                     <tr>
-                        <td class="text-right pr-2 lh1rem p03rem0 xs-w117">{{if gt .Revocations  0 }}<a href="#revocations" data-keynav-skip>REVOCATIONS</a>{{else}}REVOCATIONS{{end}}</td>
+                        <td class="text-right pr-2 lh1rem p03rem0 xs-w117">{{if gt .Revocations  0 }}<a href="#revocations">REVOCATIONS</a>{{else}}REVOCATIONS{{end}}</td>
                         <td class="lh1rem">
                             {{.Revocations}}
                         </td>
                     </tr>
                     <tr>
-                        <td class="text-right pr-2 lh1rem p03rem0 xs-w117">{{if gt .Transactions  0 }}<a href="#transactions" data-keynav-skip>TRANSACTIONS</a>{{else}}TRANSACTIONS{{end}}</td>
+                        <td class="text-right pr-2 lh1rem p03rem0 xs-w117">{{if gt .Transactions  0 }}<a href="#transactions">TRANSACTIONS</a>{{else}}TRANSACTIONS{{end}}</td>
                         <td class="lh1rem">
                             {{.Transactions}}
                         </td>
@@ -155,14 +156,14 @@
                         <table class="table table-sm striped">
                             <thead>
                                 <th>Transaction ID</th>
-                                <th class="text-right">Total HXD</th>
+                                <th class="text-right">Total DCR</th>
                                 <th>Size</th>
                             </thead>
                             <tbody>
                                 <tr>
                                     <td class="break-word">
                                         <span>
-                                            <a class="hash" href="/tx/{{.TxID}}">{{.TxID}}</a>
+                                            <a class="hash" href="/explorer/tx/{{.TxID}}">{{.TxID}}</a>
                                         </span>
                                     </td>
                                     <td class="mono fs15 text-right">{{template "decimalParts" (float64AsDecimalParts .Total false)}}</td>
@@ -197,7 +198,7 @@
                             <th>Last Block Valid</th>
                             <th>Issue ID</th>
                             <th>Choice ID</th>
-                            <th class="text-right">Total HXD</th>
+                            <th class="text-right">Total DCR</th>
                             <th>Size</th>
                         </thead>
                         <tbody>
@@ -205,7 +206,7 @@
                             <tr>
                                 <td class="break-word">
                                     <span>
-                                        <a class="hash lh1rem" href="/tx/{{.TxID}}">{{.TxID}}</a>
+                                        <a class="hash lh1rem" href="/explorer/tx/{{.TxID}}">{{.TxID}}</a>
                                     </span>
                                 </td>
                                 <td class="mono fs15">{{.VoteInfo.Version}}</td>
@@ -230,40 +231,6 @@
             </div>
         </div>
 
-        {{if ge .Height .StakeValidationHeight}}
-        <div class="row">
-            <span class="anchor" id="misses"></span>
-            <div class="col-md-12">
-                <h4><span>Missed Votes</span></h4>
-                {{if not .Misses}}
-                    <table class="table table-sm striped">
-                            <tr>
-                                <td>No missed votes in this block.
-                                </td>
-                            </tr>
-                    </table>
-                {{else}}
-                    <table class="table table-sm striped">
-                        <thead>
-                            <th>Ticket ID</th>
-                        </thead>
-                        <tbody>
-                            {{range .Misses}}
-                            <tr>
-                                <td class="break-word">
-                                    <span>
-                                        <a class="hash lh1rem" href="/tx/{{.}}">{{.}}</a>
-                                    </span>
-                                </td>
-                            </tr>
-                            {{end}}
-                        </tbody>
-                    </table>
-                {{end}}
-            </div>
-        </div>
-        {{end}}
-
         <div class="row">
             <span class="anchor" id="tickets"></span>
             <div class="col-md-12">
@@ -278,7 +245,7 @@
                     <table class="table table-sm striped">
                         <thead>
                             <th>Transaction ID</th>
-                            <th class="text-right">Total HXD</th>
+                            <th class="text-right">Total DCR</th>
                             <th class="text-right">Fee</th>
                             <th>Size</th>
                         </thead>
@@ -287,10 +254,10 @@
                             <tr>
                                 <td class="break-word">
                                     <span>
-                                        <a class="hash" href="/tx/{{.TxID}}">{{.TxID}}</a>
+                                        <a class="hash" href="/explorer/tx/{{.TxID}}">{{.TxID}}</a>
                                     </span>
                                 </td>
-                                <td class="text-right hx mono fs15">{{template "decimalParts" (float64AsDecimalParts .Total false)}}</td>
+                                <td class="text-right dcr mono fs15">{{template "decimalParts" (float64AsDecimalParts .Total false)}}</td>
                                 <td class="mono fs15 text-right">{{.Fee}}</td>
                                 <td class="mono fs15">{{.FormattedSize}}</td>
                             </tr>
@@ -309,7 +276,7 @@
                 <table class="table table-sm striped">
                     <thead>
                         <th>Transaction ID</th>
-                        <th class="text-right">Total HXD</th>
+                        <th class="text-right">Total DCR</th>
                         <th class="text-right">Fee</th>
                         <th>Size</th>
                     </thead>
@@ -318,7 +285,7 @@
                         <tr>
                             <td class="break-word">
                                 <span>
-                                    <a class="hash" href="/tx/{{.TxID}}">{{.TxID}}</a>
+                                    <a class="hash" href="/explorer/tx/{{.TxID}}">{{.TxID}}</a>
                                 </span>
                             </td>
                             <td class="mono fs15 text-right">{{template "decimalParts" (float64AsDecimalParts .Total false)}}</td>
@@ -336,45 +303,39 @@
             <span class="anchor" id="transactions"></span>
             <div class="col-sm-12">
                 <h4><span>Transactions</span></h4>
-                {{if not .TxAvailable}}
                 <table class="table table-sm striped">
-                    <tr>
-                        <td>No standard transactions mined this block.</td>
-                    </tr>
+                    <thead>
+                        <th>Transaction ID</th>
+                        <th class="text-right">Total DCR</th>
+                        <th class="text-right">Fee</th>
+                        <th>Size</th>
+                    </thead>
+                    <tbody>
+                        {{range .Tx}}
+                        {{if eq .Coinbase false}}
+                        <tr>
+                            <td class="break-word">
+                                <span>
+                                    <a class="hash" href="/explorer/tx/{{.TxID}}">{{.TxID}}</a>
+                                </span>
+                            </td>
+                            <td class="mono fs15 text-right">{{template "decimalParts" (float64AsDecimalParts .Total false)}}</td>
+                            <td class="mono fs15 text-right">{{.Fee}}</td>
+                            <td class="mono fs15">{{.FormattedSize}}</td>
+                        </tr>
+                        {{end}}
+                        {{end}}
+                    </tbody>
                 </table>
-                {{else}}
-                    <table class="table table-sm striped">
-                        <thead>
-                            <th>Transaction ID</th>
-                            <th class="text-right">Total HXD</th>
-                            <th class="text-right">Fee</th>
-                            <th>Size</th>
-                        </thead>
-                        <tbody>
-                            {{range .Tx}}
-                            {{if eq .Coinbase false}}
-                            <tr>
-                                <td class="break-word">
-                                    <span>
-                                        <a class="hash" href="/tx/{{.TxID}}">{{.TxID}}</a>
-                                    </span>
-                                </td>
-                                <td class="mono fs15 text-right">{{template "decimalParts" (float64AsDecimalParts .Total false)}}</td>
-                                <td class="mono fs15 text-right">{{.Fee}}</td>
-                                <td class="mono fs15">{{.FormattedSize}}</td>
-                            </tr>
-                            {{end}}
-                            {{end}}
-                        </tbody>
-                    </table>
-                {{end}}
             </div>
-        </div> 
-    {{end}}
+        </div>
+
     </div>
 </div>
 
-{{ template "footer" . }}
+{{template "footer"}}
+
 </body>
+{{end}}
 </html>
 {{ end }}

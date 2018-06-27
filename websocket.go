@@ -6,7 +6,7 @@ package main
 import (
 	"sync"
 
-	apitypes "github.com/coolsnady/Explorer/api/types"
+	apitypes "github.com/coolsnady/hcexplorer/dcrdataapi"
 )
 
 // WebSocketMessage represents the JSON object used to send and received typed

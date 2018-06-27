@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/coolsnady/hxd/blockchain/stake"
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/hxd/database"
-	_ "github.com/coolsnady/hxd/database/ffldb" // init the ffldb driver
-	"github.com/coolsnady/hxd/hxutil"
-	"github.com/coolsnady/hxd/rpcclient"
-	"github.com/coolsnady/hxd/wire"
+	"github.com/coolsnady/hcd/blockchain/stake"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/database"
+	_ "github.com/coolsnady/hcd/database/ffldb" // init the ffldb driver
+	"github.com/coolsnady/hcutil"
+	"github.com/coolsnady/hcrpcclient"
+	"github.com/coolsnady/hcd/wire"
 )
 
 const (
@@ -25,8 +25,8 @@ const (
 // tree update with a single block or chunk of blocks.  This does NOT SCALE!
 
 // BuildStakeTree returns a database with a stake tree
-func BuildStakeTree(blocks map[int64]*hxutil.Block, netParams *chaincfg.Params,
-	nodeClient *rpcclient.Client, poolRequiredHeight int64, DBName ...string) (database.DB, []int64, error) {
+func BuildStakeTree(blocks map[int64]*hcutil.Block, netParams *chaincfg.Params,
+	nodeClient *hcrpcclient.Client, poolRequiredHeight int64, DBName ...string) (database.DB, []int64, error) {
 
 	if blocks[0] == nil || blocks[0].Height() != 0 {
 		return nil, nil, fmt.Errorf("Must start at height 0")
@@ -115,12 +115,7 @@ func BuildStakeTree(blocks map[int64]*hxutil.Block, netParams *chaincfg.Params,
 				delete(liveTicketMap, revokedTickets[i])
 			}
 
-			hB, errx := block.BlockHeaderBytes()
-			if errx != nil {
-				return fmt.Errorf("unable to serialize block header: %v", errx)
-			}
-
-			bestNode, err = bestNode.ConnectNode(stake.CalcHash256PRNGIV(hB),
+			bestNode, err = bestNode.ConnectNode(block.MsgBlock().Header,
 				spentTickets, revokedTickets, ticketsToAdd)
 			if err != nil {
 				return fmt.Errorf("couldn't connect node: %v", err.Error())
@@ -143,7 +138,7 @@ func BuildStakeTree(blocks map[int64]*hxutil.Block, netParams *chaincfg.Params,
 /// kang
 
 // TicketsInBlock finds all the new tickets in the block.
-func TicketsInBlock(bl *hxutil.Block) ([]chainhash.Hash, []*wire.MsgTx) {
+func TicketsInBlock(bl *hcutil.Block) ([]chainhash.Hash, []*wire.MsgTx) {
 	tickets := make([]chainhash.Hash, 0)
 	ticketsMsgTx := make([]*wire.MsgTx, 0)
 	for _, stx := range bl.STransactions() {
@@ -158,9 +153,9 @@ func TicketsInBlock(bl *hxutil.Block) ([]chainhash.Hash, []*wire.MsgTx) {
 }
 
 // TicketTxnsInBlock finds all the new tickets in the block.
-func TicketTxnsInBlock(bl *hxutil.Block) ([]chainhash.Hash, []*hxutil.Tx) {
+func TicketTxnsInBlock(bl *hcutil.Block) ([]chainhash.Hash, []*hcutil.Tx) {
 	tickets := make([]chainhash.Hash, 0)
-	ticketTxns := make([]*hxutil.Tx, 0)
+	ticketTxns := make([]*hcutil.Tx, 0)
 	for _, stx := range bl.STransactions() {
 		if stake.DetermineTxType(stx.MsgTx()) == stake.TxTypeSStx {
 			h := stx.Hash()
@@ -173,7 +168,7 @@ func TicketTxnsInBlock(bl *hxutil.Block) ([]chainhash.Hash, []*hxutil.Tx) {
 }
 
 // TicketsSpentInBlock finds all the tickets spent in the block.
-func TicketsSpentInBlock(bl *hxutil.Block) []chainhash.Hash {
+func TicketsSpentInBlock(bl *hcutil.Block) []chainhash.Hash {
 	tickets := make([]chainhash.Hash, 0)
 	for _, stx := range bl.STransactions() {
 		if stake.DetermineTxType(stx.MsgTx()) == stake.TxTypeSSGen {
@@ -186,7 +181,7 @@ func TicketsSpentInBlock(bl *hxutil.Block) []chainhash.Hash {
 }
 
 // VotesInBlock finds all the votes in the block.
-func VotesInBlock(bl *hxutil.Block) []chainhash.Hash {
+func VotesInBlock(bl *hcutil.Block) []chainhash.Hash {
 	votes := make([]chainhash.Hash, 0)
 	for _, stx := range bl.STransactions() {
 		if stake.DetermineTxType(stx.MsgTx()) == stake.TxTypeSSGen {
@@ -199,7 +194,7 @@ func VotesInBlock(bl *hxutil.Block) []chainhash.Hash {
 }
 
 // RevokedTicketsInBlock finds all the revoked tickets in the block.
-func RevokedTicketsInBlock(bl *hxutil.Block) []chainhash.Hash {
+func RevokedTicketsInBlock(bl *hcutil.Block) []chainhash.Hash {
 	tickets := make([]chainhash.Hash, 0)
 	for _, stx := range bl.STransactions() {
 		if stake.DetermineTxType(stx.MsgTx()) == stake.TxTypeSSRtx {

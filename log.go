@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018 The Decred developers
+// Copyright (c) 2016 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -9,19 +9,15 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/coolsnady/hxd/rpcclient"
-	"github.com/coolsnady/Explorer/api"
-	"github.com/coolsnady/Explorer/api/insight"
-	"github.com/coolsnady/Explorer/blockdata"
-	"github.com/coolsnady/Explorer/db/dcrpg"
-	"github.com/coolsnady/Explorer/db/dcrsqlite"
-	"github.com/coolsnady/Explorer/explorer"
-	"github.com/coolsnady/Explorer/mempool"
-	"github.com/coolsnady/Explorer/middleware"
-	notify "github.com/coolsnady/Explorer/notification"
-	"github.com/coolsnady/Explorer/rpcutils"
-	"github.com/coolsnady/Explorer/stakedb"
-	"github.com/decred/slog"
+	"github.com/btcsuite/btclog"
+	"github.com/coolsnady/hcexplorer/blockdata"
+	"github.com/coolsnady/hcexplorer/db/dcrpg"
+	"github.com/coolsnady/hcexplorer/db/dcrsqlite"
+	"github.com/coolsnady/hcexplorer/explorer"
+	"github.com/coolsnady/hcexplorer/mempool"
+	"github.com/coolsnady/hcexplorer/rpcutils"
+	"github.com/coolsnady/hcexplorer/stakedb"
+	"github.com/coolsnady/hcrpcclient"
 	"github.com/jrick/logrotate/rotator"
 )
 
@@ -47,23 +43,21 @@ var (
 	// backendLog is the logging backend used to create all subsystem loggers.
 	// The backend must not be used before the log rotator has been initialized,
 	// or data races and/or nil pointer dereferences will occur.
-	backendLog = slog.NewBackend(logWriter{})
+	backendLog = btclog.NewBackend(logWriter{})
 
 	// logRotator is one of the logging outputs.  It should be closed on
 	// application shutdown.
 	logRotator *rotator.Rotator
 
-	notifyLog     = backendLog.Logger("NTFN")
 	sqliteLog     = backendLog.Logger("SQLT")
 	postgresqlLog = backendLog.Logger("PSQL")
 	stakedbLog    = backendLog.Logger("SKDB")
-	BlockdataLog  = backendLog.Logger("BLKD")
+	blockdataLog  = backendLog.Logger("BLKD")
 	clientLog     = backendLog.Logger("RPCC")
 	mempoolLog    = backendLog.Logger("MEMP")
 	expLog        = backendLog.Logger("EXPR")
 	apiLog        = backendLog.Logger("JAPI")
 	log           = backendLog.Logger("DATD")
-	iapiLog       = backendLog.Logger("IAPI")
 )
 
 // Initialize package-global logger variables.
@@ -71,29 +65,23 @@ func init() {
 	dcrsqlite.UseLogger(sqliteLog)
 	dcrpg.UseLogger(postgresqlLog)
 	stakedb.UseLogger(stakedbLog)
-	blockdata.UseLogger(BlockdataLog)
-	rpcclient.UseLogger(clientLog)
+	blockdata.UseLogger(blockdataLog)
+	hcrpcclient.UseLogger(clientLog)
 	rpcutils.UseLogger(clientLog)
 	mempool.UseLogger(mempoolLog)
 	explorer.UseLogger(expLog)
-	api.UseLogger(apiLog)
-	insight.UseLogger(iapiLog)
-	middleware.UseLogger(apiLog)
-	notify.UseLogger(notifyLog)
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
-var subsystemLoggers = map[string]slog.Logger{
-	"NTFN": notifyLog,
+var subsystemLoggers = map[string]btclog.Logger{
 	"SQLT": sqliteLog,
 	"PSQL": postgresqlLog,
 	"SKDB": stakedbLog,
-	"BLKD": BlockdataLog,
+	"BLKD": blockdataLog,
 	"RPCC": clientLog,
 	"MEMP": mempoolLog,
 	"EXPR": expLog,
 	"JAPI": apiLog,
-	"IAPI": iapiLog,
 	"DATD": log,
 }
 
@@ -127,7 +115,7 @@ func setLogLevel(subsystemID string, logLevel string) {
 	}
 
 	// Defaults to info if the log level is invalid.
-	level, _ := slog.LevelFromString(logLevel)
+	level, _ := btclog.LevelFromString(logLevel)
 	logger.SetLevel(level)
 }
 

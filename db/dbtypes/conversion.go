@@ -1,9 +1,9 @@
 package dbtypes
 
 import (
-	"github.com/coolsnady/hxd/chaincfg"
-	"github.com/coolsnady/hxd/wire"
-	"github.com/coolsnady/Explorer/txhelpers"
+	"github.com/coolsnady/hcexplorer/txhelpers"
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/wire"
 )
 
 // MsgBlockToDBBlock creates a dbtypes.Block from a wire.MsgBlock

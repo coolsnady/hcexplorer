@@ -1,4 +1,3 @@
-// Copyright (c) 2018, The Decred developers
 // Copyright (c) 2017, Jonathan Chappelow
 // See LICENSE for details.
 
@@ -8,8 +7,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/coolsnady/hxd/chaincfg/chainhash"
-	"github.com/coolsnady/Explorer/blockdata"
+	"github.com/coolsnady/hcexplorer/blockdata"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
 )
 
 // ReorgData contains the information from a reoranization notification
@@ -18,7 +17,6 @@ type ReorgData struct {
 	OldChainHeight int32
 	NewChainHead   chainhash.Hash
 	NewChainHeight int32
-	WG             *sync.WaitGroup
 }
 
 // ChainMonitor handles change notifications from the node client
@@ -248,8 +246,6 @@ out:
 				newHash, newHeight)
 			log.Infof("Reorganize started. OLD head block %v at height %d.",
 				oldHash, oldHeight)
-
-			reorgData.WG.Done()
 
 		case _, ok := <-p.quit:
 			if !ok {

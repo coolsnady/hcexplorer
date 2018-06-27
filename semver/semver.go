@@ -16,8 +16,9 @@ type Semver struct {
 	major, minor, patch uint32
 }
 
-// Compatible decides if the actual version is compatible with the required one.
-func Compatible(required, actual Semver) bool {
+// SemverCompatible evaluates if the versions passed are compatible and returns a
+// bool
+func SemverCompatible(required, actual Semver) bool {
 	switch {
 	case required.major != actual.major:
 		return false

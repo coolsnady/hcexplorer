@@ -8,10 +8,10 @@ package main
 import (
 	"sync"
 
-	"github.com/coolsnady/hxd/hxjson"
-	"github.com/coolsnady/hxd/wire"
-	apitypes "github.com/coolsnady/Explorer/api/types"
-	"github.com/coolsnady/Explorer/blockdata"
+	"github.com/coolsnady/hcexplorer/blockdata"
+	apitypes "github.com/coolsnady/hcexplorer/dcrdataapi"
+	"github.com/coolsnady/hcd/dcrjson"
+	"github.com/coolsnady/hcd/wire"
 )
 
 // BlockDataToMemdb models the block data and block data basic as maps
@@ -74,7 +74,7 @@ func (s *BlockDataToMemdb) Get(idx int) *blockdata.BlockData {
 }
 
 // GetHeader returns the block header for block idx
-func (s *BlockDataToMemdb) GetHeader(idx int) *hxjson.GetBlockHeaderVerboseResult {
+func (s *BlockDataToMemdb) GetHeader(idx int) *dcrjson.GetBlockHeaderVerboseResult {
 	if idx < 0 {
 		return nil
 	}
@@ -90,7 +90,7 @@ func (s *BlockDataToMemdb) GetHeader(idx int) *hxjson.GetBlockHeaderVerboseResul
 }
 
 // GetFeeInfo returns the fee info for block idx
-func (s *BlockDataToMemdb) GetFeeInfo(idx int) *hxjson.FeeInfoBlock {
+func (s *BlockDataToMemdb) GetFeeInfo(idx int) *dcrjson.FeeInfoBlock {
 	if idx < 0 {
 		return nil
 	}
@@ -106,7 +106,7 @@ func (s *BlockDataToMemdb) GetFeeInfo(idx int) *hxjson.FeeInfoBlock {
 }
 
 // GetStakeDiffEstimate returns the stake difficulty estimates for block idx
-func (s *BlockDataToMemdb) GetStakeDiffEstimate(idx int) *hxjson.EstimateStakeDiffResult {
+func (s *BlockDataToMemdb) GetStakeDiffEstimate(idx int) *dcrjson.EstimateStakeDiffResult {
 	if idx < 0 {
 		return nil
 	}
