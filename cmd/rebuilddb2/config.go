@@ -25,9 +25,9 @@ var activeNet = &netparams.MainNetParams
 var activeChain = &chaincfg.MainNetParams
 
 var (
-	dcrdHomeDir = hcutil.AppDataDir("hcd", false)
+	hcdHomeDir = hcutil.AppDataDir("hcd", false)
 	//rebuilddbHomeDir            = hcutil.AppDataDir("rebuilddb", false)
-	defaultDaemonRPCCertFile = filepath.Join(dcrdHomeDir, "rpc.cert")
+	defaultDaemonRPCCertFile = filepath.Join(hcdHomeDir, "rpc.cert")
 	defaultConfigFile        = filepath.Join(curDir, defaultConfigFilename)
 	defaultLogDir            = filepath.Join(curDir, defaultLogDirname)
 	defaultHost              = "localhost"
@@ -58,10 +58,10 @@ type config struct {
 	UpdateAddrSpendInfo bool   `short:"u" long:"updateaddrspends" description:"Update the spending transaction info in ALL rows of the addresses table."`
 
 	// RPC client options
-	DcrdUser         string `long:"dcrduser" description:"Daemon RPC user name"`
-	DcrdPass         string `long:"dcrdpass" description:"Daemon RPC password"`
-	DcrdServ         string `long:"dcrdserv" description:"Hostname/IP and port of hcd RPC server to connect to (default localhost:9109, testnet: localhost:19109, simnet: localhost:19556)"`
-	DcrdCert         string `long:"dcrdcert" description:"File containing the hcd certificate file"`
+	HcdUser         string `long:"hcduser" description:"Daemon RPC user name"`
+	HcdPass         string `long:"hcdpass" description:"Daemon RPC password"`
+	HcdServ         string `long:"hcdserv" description:"Hostname/IP and port of hcd RPC server to connect to (default localhost:9109, testnet: localhost:19109, simnet: localhost:19556)"`
+	HcdCert         string `long:"hcdcert" description:"File containing the hcd certificate file"`
 	DisableDaemonTLS bool   `long:"nodaemontls" description:"Disable TLS for the daemon RPC client -- NOTE: This is only allowed if the RPC client is connecting to localhost"`
 
 	ForceReindex bool `long:"reindex" short:"R" description:"Drop indexes prior to sync and recreate after sync, with insertion conflict checks disabled in absence of constraints."`
@@ -80,7 +80,7 @@ var (
 		DBUser:     defaultDBUser,
 		DBPass:     defaultDBPass,
 		DBName:     defaultDBName,
-		DcrdCert:   defaultDaemonRPCCertFile,
+		HcdCert:   defaultDaemonRPCCertFile,
 	}
 )
 
@@ -89,7 +89,7 @@ var (
 func cleanAndExpandPath(path string) string {
 	// Expand initial ~ to OS specific home directory.
 	if strings.HasPrefix(path, "~") {
-		homeDir := filepath.Dir(dcrdHomeDir)
+		homeDir := filepath.Dir(hcdHomeDir)
 		path = strings.Replace(path, "~", homeDir, 1)
 	}
 
@@ -199,8 +199,8 @@ func loadConfig() (*config, error) {
 
 	// Set the host names and ports to the default if the
 	// user does not specify them.
-	if cfg.DcrdServ == "" {
-		cfg.DcrdServ = defaultHost + ":" + activeNet.JSONRPCClientPort
+	if cfg.HcdServ == "" {
+		cfg.HcdServ = defaultHost + ":" + activeNet.JSONRPCClientPort
 	}
 
 	// Append the network type to the log directory so it is "namespaced"

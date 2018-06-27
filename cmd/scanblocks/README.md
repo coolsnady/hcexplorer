@@ -9,7 +9,7 @@ You just need to specify the user, password, host:port, and (optionally) the RPC
 TLS certificate if using a TLS connection to hcd.
 
 ```sh
-./scanblocks -user dcrduser -pass dcrdpass
+./scanblocks -user hcduser -pass hcdpass
 ```
 
 The argument `-notls` is true by default, but if you set it to false, it is

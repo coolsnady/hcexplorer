@@ -95,17 +95,17 @@ func (b *BlockData) ToBlockExplorerSummary() apitypes.BlockExplorerBasic {
 // Collector models a structure for the source of the blockdata
 type Collector struct {
 	mtx          sync.Mutex
-	dcrdChainSvr *hcrpcclient.Client
+	hcdChainSvr *hcrpcclient.Client
 	netParams    *chaincfg.Params
 	stakeDB      *stakedb.StakeDatabase
 }
 
 // NewCollector creates a new Collector.
-func NewCollector(dcrdChainSvr *hcrpcclient.Client, params *chaincfg.Params,
+func NewCollector(hcdChainSvr *hcrpcclient.Client, params *chaincfg.Params,
 	stakeDB *stakedb.StakeDatabase) *Collector {
 	return &Collector{
 		mtx:          sync.Mutex{},
-		dcrdChainSvr: dcrdChainSvr,
+		hcdChainSvr: hcdChainSvr,
 		netParams:    params,
 		stakeDB:      stakeDB,
 	}
@@ -139,18 +139,18 @@ func (t *Collector) CollectAPITypes(hash *chainhash.Hash) (*apitypes.BlockDataBa
 func (t *Collector) CollectBlockInfo(hash *chainhash.Hash) (*apitypes.BlockDataBasic,
 	*dcrjson.FeeInfoBlock, *dcrjson.GetBlockHeaderVerboseResult,
 	*apitypes.BlockExplorerExtraInfo, *wire.MsgBlock, error) {
-	msgBlock, err := t.dcrdChainSvr.GetBlock(hash)
+	msgBlock, err := t.hcdChainSvr.GetBlock(hash)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}
 	height := msgBlock.Header.Height
 	block := hcutil.NewBlock(msgBlock)
 	txLen := len(block.Transactions())
-	coinSupply, err := t.dcrdChainSvr.GetCoinSupply()
+	coinSupply, err := t.hcdChainSvr.GetCoinSupply()
 	if err != nil {
 		log.Error("GetCoinSupply failed: ", err)
 	}
-	nbSubsidy, err := t.dcrdChainSvr.GetBlockSubsidy(int64(msgBlock.Header.Height)+1, 5)
+	nbSubsidy, err := t.hcdChainSvr.GetBlockSubsidy(int64(msgBlock.Header.Height)+1, 5)
 	if err != nil {
 		log.Errorf("GetBlockSubsidy for %d failed: %v", msgBlock.Header.Height, err)
 	}
@@ -178,7 +178,7 @@ func (t *Collector) CollectBlockInfo(hash *chainhash.Hash) (*apitypes.BlockDataB
 	diff := txhelpers.GetDifficultyRatio(header.Bits, t.netParams)
 	sdiff := hcutil.Amount(header.SBits).ToCoin()
 
-	blockHeaderResults, err := t.dcrdChainSvr.GetBlockHeaderVerbose(hash)
+	blockHeaderResults, err := t.hcdChainSvr.GetBlockHeaderVerbose(hash)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}
@@ -220,7 +220,7 @@ func (t *Collector) CollectHash(hash *chainhash.Hash) (*BlockData, *wire.MsgBloc
 	}
 
 	// Number of peer connection to chain server
-	numConn, err := t.dcrdChainSvr.GetConnectionCount()
+	numConn, err := t.hcdChainSvr.GetConnectionCount()
 	if err != nil {
 		log.Warn("Unable to get connection count: ", err)
 	}
@@ -264,7 +264,7 @@ func (t *Collector) Collect() (*BlockData, *wire.MsgBlock, error) {
 
 	// Pull and store relevant data about the blockchain.
 	go func() {
-		bestBlockHash, err := t.dcrdChainSvr.GetBestBlockHash()
+		bestBlockHash, err := t.hcdChainSvr.GetBestBlockHash()
 		toch <- bbhRes{err, bestBlockHash}
 	}()
 
@@ -277,13 +277,13 @@ func (t *Collector) Collect() (*BlockData, *wire.MsgBlock, error) {
 	}
 
 	// Stake difficulty
-	stakeDiff, err := t.dcrdChainSvr.GetStakeDifficulty()
+	stakeDiff, err := t.hcdChainSvr.GetStakeDifficulty()
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// estimatestakediff
-	estStakeDiff, err := t.dcrdChainSvr.EstimateStakeDiff(nil)
+	estStakeDiff, err := t.hcdChainSvr.EstimateStakeDiff(nil)
 	if err != nil {
 		log.Warn("estimatestakediff is broken: ", err)
 		estStakeDiff = &dcrjson.EstimateStakeDiffResult{}
@@ -296,7 +296,7 @@ func (t *Collector) Collect() (*BlockData, *wire.MsgBlock, error) {
 	}
 
 	// Number of peer connection to chain server
-	numConn, err := t.dcrdChainSvr.GetConnectionCount()
+	numConn, err := t.hcdChainSvr.GetConnectionCount()
 	if err != nil {
 		log.Warn("Unable to get connection count: ", err)
 	}

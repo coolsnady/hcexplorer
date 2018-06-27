@@ -26,7 +26,6 @@ type APIDataSource interface {
 	GetRawTransaction(txid string) *apitypes.Tx
 	GetTransactionHex(txid string) string
 	GetTrimmedTransaction(txid string) *apitypes.TrimmedTx
-	GetRawTransactionWithPrevOutAddresses(txid string) (*apitypes.Tx, [][]string)
 	GetVoteInfo(txid string) (*apitypes.VoteInfo, error)
 	GetVoteVersionInfo(ver uint32) (*dcrjson.GetVoteInfoResult, error)
 	GetStakeVersions(txHash string, count int32) (*dcrjson.GetStakeVersionsResult, error)

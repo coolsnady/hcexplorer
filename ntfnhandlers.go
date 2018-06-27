@@ -19,31 +19,31 @@ import (
 	"github.com/coolsnady/hcwallet/wallet/udb"
 )
 
-func registerNodeNtfnHandlers(dcrdClient *hcrpcclient.Client) *ContextualError {
+func registerNodeNtfnHandlers(hcdClient *hcrpcclient.Client) *ContextualError {
 	var err error
 	// Register for block connection and chain reorg notifications.
-	if err = dcrdClient.NotifyBlocks(); err != nil {
+	if err = hcdClient.NotifyBlocks(); err != nil {
 		return newContextualError("block notification "+
 			"registration failed", err)
 	}
 
 	// Register for stake difficulty change notifications.
-	// if err = dcrdClient.NotifyStakeDifficulty(); err != nil {
+	// if err = hcdClient.NotifyStakeDifficulty(); err != nil {
 	// 	return newContextualError("stake difficulty change "+
 	// 		"notification registration failed", err)
 	// }
 
 	// Register for tx accepted into mempool ntfns
-	if err = dcrdClient.NotifyNewTransactions(false); err != nil {
+	if err = hcdClient.NotifyNewTransactions(false); err != nil {
 		return newContextualError("new transaction "+
 			"notification registration failed", err)
 	}
 
 	// For OnNewTickets
 	//  Commented since there is a bug in hcrpcclient/notify.go
-	// dcrdClient.NotifyNewTickets()
+	// hcdClient.NotifyNewTickets()
 
-	if err = dcrdClient.NotifyWinningTickets(); err != nil {
+	if err = hcdClient.NotifyWinningTickets(); err != nil {
 		return newContextualError("winning ticket "+
 			"notification registration failed", err)
 	}
@@ -52,7 +52,7 @@ func registerNodeNtfnHandlers(dcrdClient *hcrpcclient.Client) *ContextualError {
 	// OnRelevantTxAccepted.
 	// TODO: register outpoints (third argument).
 	// if len(addresses) > 0 {
-	// 	if err = dcrdClient.LoadTxFilter(true, addresses, nil); err != nil {
+	// 	if err = hcdClient.LoadTxFilter(true, addresses, nil); err != nil {
 	// 		return newContextualError("load tx filter failed", err)
 	// 	}
 	// }

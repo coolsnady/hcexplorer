@@ -125,14 +125,14 @@ out:
 				// to update the web UI with the new best block.
 			}
 
-			msgBlock, _ := p.collector.dcrdChainSvr.GetBlock(hash)
+			msgBlock, _ := p.collector.hcdChainSvr.GetBlock(hash)
 			block := hcutil.NewBlock(msgBlock)
 			height := block.Height()
 			log.Infof("Block height %v connected. Collecting data...", height)
 
 			if len(p.watchaddrs) > 0 {
 				// txsForOutpoints := blockConsumesOutpointWithAddresses(block, p.watchaddrs,
-				// 	p.collector.dcrdChainSvr)
+				// 	p.collector.hcdChainSvr)
 				// if len(txsForOutpoints) > 0 {
 				// 	p.spendTxBlockChan <- &BlockWatchedTx{height, txsForOutpoints}
 				// }
@@ -147,7 +147,7 @@ out:
 			}
 
 			var blockData *BlockData
-			chainHeight, err := p.collector.dcrdChainSvr.GetBlockCount()
+			chainHeight, err := p.collector.hcdChainSvr.GetBlockCount()
 			if err != nil {
 				log.Errorf("Unable to get chain height: %v", err)
 				release()

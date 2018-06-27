@@ -26,11 +26,11 @@ var requiredChainServerAPI = semver.NewSemver(3, 0, 0)
 // with the given credentials and optional notification handlers.
 func ConnectNodeRPC(host, user, pass, cert string, disableTLS bool,
 	ntfnHandlers ...*hcrpcclient.NotificationHandlers) (*hcrpcclient.Client, semver.Semver, error) {
-	var dcrdCerts []byte
+	var hcdCerts []byte
 	var err error
 	var nodeVer semver.Semver
 	if !disableTLS {
-		dcrdCerts, err = ioutil.ReadFile(cert)
+		hcdCerts, err = ioutil.ReadFile(cert)
 		if err != nil {
 			log.Errorf("Failed to read hcd cert file at %s: %s\n",
 				cert, err.Error())
@@ -49,7 +49,7 @@ func ConnectNodeRPC(host, user, pass, cert string, disableTLS bool,
 		Endpoint:     "ws", // websocket
 		User:         user,
 		Pass:         pass,
-		Certificates: dcrdCerts,
+		Certificates: hcdCerts,
 		DisableTLS:   disableTLS,
 	}
 
@@ -60,20 +60,20 @@ func ConnectNodeRPC(host, user, pass, cert string, disableTLS bool,
 		}
 		ntfnHdlrs = ntfnHandlers[0]
 	}
-	dcrdClient, err := hcrpcclient.New(connCfgDaemon, ntfnHdlrs)
+	hcdClient, err := hcrpcclient.New(connCfgDaemon, ntfnHdlrs)
 	if err != nil {
 		return nil, nodeVer, fmt.Errorf("Failed to start hcd RPC client: %s", err.Error())
 	}
 
 	// Ensure the RPC server has a compatible API version.
-	ver, err := dcrdClient.Version()
+	ver, err := hcdClient.Version()
 	if err != nil {
 		log.Error("Unable to get RPC version: ", err)
 		return nil, nodeVer, fmt.Errorf("unable to get node RPC version")
 	}
 
-	dcrdVer := ver["dcrdjsonrpcapi"]
-	nodeVer = semver.NewSemver(dcrdVer.Major, dcrdVer.Minor, dcrdVer.Patch)
+	hcdVer := ver["hcdjsonrpcapi"]
+	nodeVer = semver.NewSemver(hcdVer.Major, hcdVer.Minor, hcdVer.Patch)
 
 	if !semver.SemverCompatible(requiredChainServerAPI, nodeVer) {
 		return nil, nodeVer, fmt.Errorf("Node JSON-RPC server does not have "+
@@ -81,7 +81,7 @@ func ConnectNodeRPC(host, user, pass, cert string, disableTLS bool,
 			nodeVer, requiredChainServerAPI)
 	}
 
-	return dcrdClient, nodeVer, nil
+	return hcdClient, nodeVer, nil
 }
 
 // BuildBlockHeaderVerbose creates a *dcrjson.GetBlockHeaderVerboseResult from

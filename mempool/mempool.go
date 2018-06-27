@@ -302,15 +302,15 @@ func (m *MempoolData) GetNumTickets() uint32 {
 
 type mempoolDataCollector struct {
 	mtx          sync.Mutex
-	dcrdChainSvr *hcrpcclient.Client
+	hcdChainSvr *hcrpcclient.Client
 	activeChain  *chaincfg.Params
 }
 
 // NewMempoolDataCollector creates a new mempoolDataCollector.
-func NewMempoolDataCollector(dcrdChainSvr *hcrpcclient.Client, params *chaincfg.Params) *mempoolDataCollector {
+func NewMempoolDataCollector(hcdChainSvr *hcrpcclient.Client, params *chaincfg.Params) *mempoolDataCollector {
 	return &mempoolDataCollector{
 		mtx:          sync.Mutex{},
-		dcrdChainSvr: dcrdChainSvr,
+		hcdChainSvr: hcdChainSvr,
 		activeChain:  params,
 	}
 }
@@ -329,7 +329,7 @@ func (t *mempoolDataCollector) Collect() (*MempoolData, error) {
 	}(time.Now())
 
 	// client
-	c := t.dcrdChainSvr
+	c := t.hcdChainSvr
 
 	// Get a map of ticket hashes to getrawmempool results
 	// mempoolTickets[ticketHashes[0].String()].Fee

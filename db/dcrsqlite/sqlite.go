@@ -34,9 +34,9 @@ type DBInfo struct {
 
 const (
 	// TableNameSummaries is name of the table used to store block summary data
-	TableNameSummaries = "dcrdata_block_summary"
+	TableNameSummaries = "hcdata_block_summary"
 	// TableNameStakeInfo is name of the table used to store extended stake info
-	TableNameStakeInfo = "dcrdata_stakeinfo_extended"
+	TableNameStakeInfo = "hcdata_stakeinfo_extended"
 )
 
 // DB is a wrapper around sql.DB that adds methods for storing and retrieving

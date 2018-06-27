@@ -112,8 +112,8 @@ func mainCore() error {
 
 	// Daemon client connection
 	ntfnHandlers, collectionQueue := makeNodeNtfnHandlers(cfg)
-	dcrdClient, nodeVer, err := connectNodeRPC(cfg, ntfnHandlers)
-	if err != nil || dcrdClient == nil {
+	hcdClient, nodeVer, err := connectNodeRPC(cfg, ntfnHandlers)
+	if err != nil || hcdClient == nil {
 		return fmt.Errorf("Connection to hcd failed: %v", err)
 	}
 
@@ -121,9 +121,9 @@ func mainCore() error {
 		// Closing these channels should be unnecessary if quit was handled right
 		closeNtfnChans()
 
-		if dcrdClient != nil {
+		if hcdClient != nil {
 			log.Infof("Closing connection to hcd.")
-			dcrdClient.Shutdown()
+			hcdClient.Shutdown()
 		}
 
 		log.Infof("Bye!")
@@ -131,7 +131,7 @@ func mainCore() error {
 	}()
 
 	// Display connected network
-	curnet, err := dcrdClient.GetCurrentNet()
+	curnet, err := hcdClient.GetCurrentNet()
 	if err != nil {
 		return fmt.Errorf("Unable to get current network from hcd: %v", err)
 	}
@@ -146,7 +146,7 @@ func mainCore() error {
 	dbInfo := dcrsqlite.DBInfo{FileName: cfg.DBFileName}
 	//sqliteDB, err := dcrsqlite.InitDB(&dbInfo)
 	sqliteDB, cleanupDB, err := dcrsqlite.InitWiredDB(&dbInfo,
-		ntfnChans.updateStatusDBHeight, dcrdClient, activeChain)
+		ntfnChans.updateStatusDBHeight, hcdClient, activeChain)
 	defer cleanupDB()
 	if err != nil {
 		return fmt.Errorf("Unable to initialize SQLite database: %v", err)
@@ -170,7 +170,7 @@ func mainCore() error {
 		close(quit)
 	}()
 
-	_, height, err := dcrdClient.GetBestBlock()
+	_, height, err := hcdClient.GetBestBlock()
 	if err != nil {
 		return fmt.Errorf("Unable to get block from node: %v", err)
 	}
@@ -210,7 +210,7 @@ func mainCore() error {
 	for {
 		// Launch the sync functions for both DBs
 		go sqliteDB.SyncDBAsync(sqliteSyncRes, quit)
-		go db.SyncChainDBAsync(pgSyncRes, dcrdClient, quit,
+		go db.SyncChainDBAsync(pgSyncRes, hcdClient, quit,
 			newPGIndexes, updateAllAddresses)
 
 		// Wait for the results
@@ -258,7 +258,7 @@ func mainCore() error {
 	}
 
 	// Block data collector
-	collector := blockdata.NewCollector(dcrdClient, activeChain, sqliteDB.GetStakeDB())
+	collector := blockdata.NewCollector(hcdClient, activeChain, sqliteDB.GetStakeDB())
 	if collector == nil {
 		return fmt.Errorf("Failed to create block data collector")
 	}
@@ -352,7 +352,7 @@ func mainCore() error {
 	})
 
 	if cfg.MonitorMempool {
-		mpoolCollector := mempool.NewMempoolDataCollector(dcrdClient, activeChain)
+		mpoolCollector := mempool.NewMempoolDataCollector(hcdClient, activeChain)
 		if mpoolCollector == nil {
 			return fmt.Errorf("Failed to create mempool data collector")
 		}
@@ -390,7 +390,7 @@ func mainCore() error {
 		mpm := mempool.NewMempoolMonitor(mpoolCollector, mempoolSavers,
 			ntfnChans.newTxChan, quit, &wg, newTicketLimit, mini, maxi, mpi)
 		wg.Add(1)
-		go mpm.TxHandler(dcrdClient)
+		go mpm.TxHandler(hcdClient)
 	}
 
 	select {
@@ -400,13 +400,13 @@ func mainCore() error {
 	}
 
 	// Register for notifications now that the monitors are listening
-	cerr := registerNodeNtfnHandlers(dcrdClient)
+	cerr := registerNodeNtfnHandlers(hcdClient)
 	if cerr != nil {
 		return fmt.Errorf("RPC client error: %v (%v)", cerr.Error(), cerr.Cause())
 	}
 
 	// Start web API
-	app := newContext(dcrdClient, &sqliteDB, cfg.IndentJSON)
+	app := newContext(hcdClient, &sqliteDB, cfg.IndentJSON)
 	// Start notification hander to keep /status up-to-date
 	wg.Add(1)
 	go app.StatusNtfnHandler(&wg, quit)
@@ -452,8 +452,8 @@ func main() {
 }
 
 func connectNodeRPC(cfg *config, ntfnHandlers *hcrpcclient.NotificationHandlers) (*hcrpcclient.Client, semver.Semver, error) {
-	return rpcutils.ConnectNodeRPC(cfg.DcrdServ, cfg.DcrdUser, cfg.DcrdPass,
-		cfg.DcrdCert, cfg.DisableDaemonTLS, ntfnHandlers)
+	return rpcutils.ConnectNodeRPC(cfg.HcdServ, cfg.HcdUser, cfg.HcdPass,
+		cfg.HcdCert, cfg.DisableDaemonTLS, ntfnHandlers)
 }
 
 func listenAndServeProto(listen, proto string, mux http.Handler) error {
