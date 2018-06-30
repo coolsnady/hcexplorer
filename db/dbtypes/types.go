@@ -210,7 +210,7 @@ type ScriptSig struct {
 	Hex string `json:"hex"`
 }
 
-// Tx models a Decred transaction. It is stored in a Block.
+// Tx models a Hcd transaction. It is stored in a Block.
 type Tx struct {
 	//blockDbID  int64
 	BlockHash   string             `json:"block_hash"`
@@ -238,7 +238,7 @@ type Tx struct {
 	// vout will have a tx_dbid
 }
 
-// Block models a Decred block.
+// Block models a Hcd block.
 type Block struct {
 	Hash         string `json:"hash"`
 	Size         uint32 `json:"size"`

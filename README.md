@@ -5,7 +5,7 @@
 [![Latest tag](https://img.shields.io/github/tag/coolsnady/hcexplorer.svg)](https://github.com/coolsnady/hcexplorer/tags)
 [![ISC License](https://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 
-The hcexplorer repository is a collection of golang packages and apps for [Decred](https://www.coolsnady.org/) data collection, storage, and presentation.
+The hcexplorer repository is a collection of golang packages and apps for [Hcd](https://www.coolsnady.org/) data collection, storage, and presentation.
 
 ## Repository overview
 
@@ -184,7 +184,7 @@ of the hcexplorer daemon, but may be called alone with rebuilddb.
 
 `rebuilddb2` is a CLI app used for maintenance of hcexplorer's `dcrpg` database
 (a.k.a. DB v2) that uses PostgreSQL to store a nearly complete record of the
-Decred blockchain data. See the [README.md](./cmd/rebuilddb2/README.md) for
+Hcd blockchain data. See the [README.md](./cmd/rebuilddb2/README.md) for
 `rebuilddb2` for important usage information.
 
 ### scanblocks
@@ -201,7 +201,7 @@ API.  This facilitates authoring of robust golang clients of the API.
 
 `package dbtypes` defines the data types used by the DB backends to model the
 block, transaction, and related blockchain data structures. Functions for
-converting from standard Decred data types (e.g. `wire.MsgBlock`) are also
+converting from standard Hcd data types (e.g. `wire.MsgBlock`) are also
 provided.
 
 `package rpcutils` includes helper functions for interacting with a

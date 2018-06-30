@@ -57,7 +57,7 @@ type DBInfo struct {
 	Host, Port, User, Pass, DBName string
 }
 
-// NewChainDB constructs a ChainDB for the given connection and Decred network
+// NewChainDB constructs a ChainDB for the given connection and Hcd network
 // parameters. By default, duplicate row checks on insertion are enabled.
 func NewChainDB(dbi *DBInfo, params *chaincfg.Params) (*ChainDB, error) {
 	// Connect to the PostgreSQL daemon and return the *sql.DB
