@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"sync"
@@ -1028,4 +1029,16 @@ func (c *appContext) getAddressTransactionsRaw(w http.ResponseWriter, r *http.Re
 		return
 	}
 	writeJSON(w, txs, c.getIndentQuery(r))
+}
+
+func (c *appContext) getPoolList(w http.ResponseWriter, r *http.Request) {
+	b, err := ioutil.ReadFile("public/poolList.json")
+    if err != nil {
+        http.Error(w, http.StatusText(422), 422)
+		return
+	}
+	
+	var data interface{}
+	json.Unmarshal(b,&data)
+	writeJSON(w, data, c.getIndentQuery(r))
 }

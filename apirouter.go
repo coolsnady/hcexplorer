@@ -158,6 +158,12 @@ func newAPIRouter(app *appContext, userRealIP bool) apiMux {
 			rd.With(NPathCtx).Get("/details/{N}", app.getSSTxDetails)
 		})
 	})
+	
+	mux.Route("/pool", func(r chi.Router) {
+		r.Route("/list", func(rd chi.Router) {
+			rd.Get("/", app.getPoolList)
+		})
+	})
 
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, r.URL.RequestURI()+" ain't no country I've ever heard of! (404)", http.StatusNotFound)
