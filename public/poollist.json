@@ -1,4 +1,5 @@
 {
+    "testnet":{
 	"APIEnabled": true,
 	"APIVersionsSupported": [
 		1,
@@ -17,4 +18,5 @@
 	"ProportionMissed": 0,
 	"UserCount": 0,
 	"UserCountActive": 0
+}     
 }

@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"fmt"
 	"io"
+	"os"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -1032,7 +1034,8 @@ func (c *appContext) getAddressTransactionsRaw(w http.ResponseWriter, r *http.Re
 }
 
 func (c *appContext) getPoolList(w http.ResponseWriter, r *http.Request) {
-	b, err := ioutil.ReadFile("public/poolList.json")
+	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	b, err := ioutil.ReadFile(filepath.Join(dir,"public","poolList.json"))
     if err != nil {
         http.Error(w, http.StatusText(422), 422)
 		return
