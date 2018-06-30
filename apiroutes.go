@@ -1042,6 +1042,10 @@ func (c *appContext) getPoolList(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	var data interface{}
-	json.Unmarshal(b,&data)
+	err = json.Unmarshal(b,&data)
+	if err != nil {
+		http.Error(w, err.Error(), 422)
+		return
+	}
 	writeJSON(w, data, c.getIndentQuery(r))
 }
