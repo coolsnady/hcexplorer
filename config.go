@@ -1,5 +1,5 @@
 // Copyright (c) 2017 Jonathan Chappelow
-// Copyright (c) 2016 The Hcd developers
+// Copyright (c) 2016 The Decred developers
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
@@ -106,10 +106,10 @@ type config struct {
 	OutFolder string `short:"f" long:"outfolder" description:"Folder for file outputs"`
 
 	// RPC client options
-	HcdUser         string `long:"hcduser" description:"Daemon RPC user name"`
-	HcdPass         string `long:"hcdpass" description:"Daemon RPC password"`
-	HcdServ         string `long:"hcdserv" description:"Hostname/IP and port of hcd RPC server to connect to (default localhost:9109, testnet: localhost:19109, simnet: localhost:19556)"`
-	HcdCert         string `long:"hcdcert" description:"File containing the hcd certificate file"`
+	HcdUser          string `long:"hcduser" description:"Daemon RPC user name"`
+	HcdPass          string `long:"hcdpass" description:"Daemon RPC password"`
+	HcdServ          string `long:"hcdserv" description:"Hostname/IP and port of hcd RPC server to connect to (default localhost:9109, testnet: localhost:19109, simnet: localhost:19556)"`
+	HcdCert          string `long:"hcdcert" description:"File containing the hcd certificate file"`
 	DisableDaemonTLS bool   `long:"nodaemontls" description:"Disable TLS for the daemon RPC client -- NOTE: This is only allowed if the RPC client is connecting to localhost"`
 }
 
@@ -122,7 +122,7 @@ var (
 		APIListen:          defaultAPIListen,
 		IndentJSON:         defaultIndentJSON,
 		CacheControlMaxAge: defaultCacheControlMaxAge,
-		HcdCert:           defaultDaemonRPCCertFile,
+		HcdCert:            defaultDaemonRPCCertFile,
 		MonitorMempool:     defaultMonitorMempool,
 		MempoolMinInterval: defaultMempoolMinInterval,
 		MempoolMaxInterval: defaultMempoolMaxInterval,

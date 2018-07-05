@@ -1,4 +1,4 @@
-// Copyright (c) 2017, The hcexplorer developers
+// Copyright (c) 2017, The dcrdata developers
 // See LICENSE for details.
 
 package dcrpg
@@ -12,14 +12,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/coolsnady/hcd/chaincfg"
+	"github.com/coolsnady/hcd/chaincfg/chainhash"
+	"github.com/coolsnady/hcd/txscript"
+	"github.com/coolsnady/hcd/wire"
 	"github.com/coolsnady/hcexplorer/blockdata"
 	"github.com/coolsnady/hcexplorer/db/dbtypes"
 	"github.com/coolsnady/hcexplorer/explorer"
-	"github.com/coolsnady/hcd/chaincfg"
-	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcutil"
-	"github.com/coolsnady/hcd/txscript"
-	"github.com/coolsnady/hcd/wire"
 	humanize "github.com/dustin/go-humanize"
 )
 
