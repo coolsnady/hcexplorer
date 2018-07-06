@@ -22,23 +22,23 @@
   version = "1.0.4"
 
 [[constraint]]
-  branch = "master"
+  branch = "v0.1.0"
   name = "github.com/chappjc/logrus-prefix"
 
 [[constraint]]
-  branch = "master"
+  branch = "v0.1.0"
   name = "github.com/btcsuite/btclog"
 
 [[constraint]]
-  branch = "master"
+  branch = "v0.1.0"
   name = "github.com/btcsuite/go-flags"
 
 [[constraint]]
-  branch = "master"
+  branch = "v0.1.0"
   name = "github.com/coolsnady/hcd"
 
 [[constraint]]
-  branch = "master"
+  branch = "v0.1.0"
   name = "github.com/coolsnady/hcwallet"
 
 [[constraint]]
@@ -50,7 +50,7 @@
   version = "1.0.2"
 
 [[constraint]]
-  branch = "master"
+  branch = "v0.1.0"
   name = "github.com/jrick/logrotate"
 
 [[constraint]]
@@ -62,17 +62,17 @@
   revision = "eabcc6af4bbe5ad3a949d36450326a2b0b9894b8"
 
 [[constraint]]
-  branch = "master"
+  branch = "v0.1.0"
   name = "github.com/shiena/ansicolor"
 
 [[constraint]]
-  branch = "master"
+  branch = "v0.1.0"
   name = "golang.org/x/net"
 
 [[constraint]]
-  branch = "master"
+  branch = "v0.1.0"
   name = "github.com/coolsnady/hcrpcclient"
 
 [[constraint]]
-  branch = "master"
+  branch = "v0.1.0"
   name = "github.com/coolsnady/hcutil"
