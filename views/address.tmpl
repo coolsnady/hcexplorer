@@ -31,21 +31,21 @@
                     <tr class="h2rem">
                         <td class="pr-2 lh1rem vam text-right xs-w91">TOTAL UNSPENT</td>
                         <td class="fs28 mono nowrap fs16-decimal d-flex align-items-center justify-content-end">
-                            {{template "decimalParts" (amountAsDecimalParts .Balance.TotalUnspent true)}}<span class="pl-1 unit">DCR</span>
+                            {{template "decimalParts" (amountAsDecimalParts .Balance.TotalUnspent true)}}<span class="pl-1 unit">HC</span>
                         </td>
                     </tr>
                     <tr>
                         <td class="text-right pr-2">RECEIVED</td>
                         <td class="mono nowrap text-right">
                             {{with $received := add .Balance.TotalSpent .Balance.TotalUnspent}}
-                            {{template "decimalParts" (amountAsDecimalParts $received true)}}<span class="pl-1 unit">DCR</span>
+                            {{template "decimalParts" (amountAsDecimalParts $received true)}}<span class="pl-1 unit">HC</span>
                             {{end}}
                         </td>
                     </tr>
                     <tr>
                         <td class="text-right pr-2">SPENT</td>
                         <td class="mono nowrap text-right">
-                            {{template "decimalParts" (amountAsDecimalParts .Balance.TotalSpent true)}}<span class="pl-1 unit">DCR</span>
+                            {{template "decimalParts" (amountAsDecimalParts .Balance.TotalSpent true)}}<span class="pl-1 unit">HC</span>
                         </td>
                     </tr>
                     {{end}}
@@ -88,8 +88,8 @@
                 <table class="table table-mono-cells table-sm striped">
                     <thead>
                         <th>Transactions ID</th>
-                        <th class="text-right">Credit DCR</th>
-                        <th>Debit DCR</th>
+                        <th class="text-right">Credit HC</th>
+                        <th>Debit HC</th>
                         <th>Time</th>
                         <th>Age</th>
                         <th>Confirms</th>

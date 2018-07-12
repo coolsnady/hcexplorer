@@ -350,7 +350,7 @@ func (t *mempoolDataCollector) Collect() (*MempoolData, error) {
 	allTicketsDetails := make(TicketsDetails, 0, N)
 	for hash, t := range mempoolTickets {
 		//ageSec := time.Since(time.Unix(t.Time, 0)).Seconds()
-		// Compute fee in DCR / kB
+		// Compute fee in HC / kB
 		feeRate := t.Fee / float64(t.Size) * 1000
 		allTicketsDetails = append(allTicketsDetails, &apitypes.TicketDetails{
 			Hash:    hash,
