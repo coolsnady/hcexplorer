@@ -1,6 +1,6 @@
 // Package explorer handles the block explorer subsystem for generating the
 // explorer pages.
-// Copyright (c) 2017, The hcexplorer developers
+// Copyright (c) 2017, The dcrdata developers
 // See LICENSE for details.
 
 package explorer
@@ -22,11 +22,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coolsnady/hcexplorer/blockdata"
-	"github.com/coolsnady/hcexplorer/db/dbtypes"
 	"github.com/coolsnady/hcd/chaincfg/chainhash"
 	"github.com/coolsnady/hcd/dcrjson"
 	"github.com/coolsnady/hcd/wire"
+	"github.com/coolsnady/hcexplorer/blockdata"
+	"github.com/coolsnady/hcexplorer/db/dbtypes"
 	humanize "github.com/dustin/go-humanize"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"

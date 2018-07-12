@@ -34,11 +34,11 @@
   name = "github.com/btcsuite/go-flags"
 
 [[constraint]]
-  branch = "master"
+  branch = "blissstake"
   name = "github.com/coolsnady/hcd"
 
 [[constraint]]
-  branch = "master"
+  branch = "blissstake"
   name = "github.com/coolsnady/hcwallet"
 
 [[constraint]]
